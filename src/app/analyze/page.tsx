@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api'
+
 
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf'
 
@@ -29,14 +29,12 @@ export default function AnalyzePage() {
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i)
         const content = await page.getTextContent()
-const pageText = (content.items as (TextItem | TextMarkedContent)[])
-  .map((item) => {
-    if ('str' in item) {
-      return item.str
-    }
-    return ''
-  })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pageText = (content.items as any[])
+
+  .map((item) => (typeof item?.str === 'string' ? item.str : ''))
   .join(' ')
+
 
 
 
