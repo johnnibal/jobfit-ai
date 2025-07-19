@@ -72,11 +72,14 @@ const pageText = (content.items as (TextItem | TextMarkedContent)[])
         <div>
           <label className="block font-medium mb-1">Upload CV (PDF)</label>
           <input
-            type="file"
-            accept="application/pdf"
-            onChange={handlePdfUpload}
-            className="block border rounded px-2 py-1"
-          />
+  type="file"
+  accept="application/pdf"
+  onChange={handlePdfUpload} // ✅ this removes the warning
+  className="
+             file:rounded file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white file:font-medium file:px-4 file:py-2 file:rounded file:border-0 
+             hover:file:bg-black/80 transition cursor-pointer"  
+/>
+
         </div>
 
         {/* CV Textarea (can be manually edited) */}
