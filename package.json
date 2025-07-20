@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@netlify/next": "^1.4.9",
     "next": "15.3.5",
     "openai": "^5.9.2",
     "pdfjs-dist": "^3.4.120",
