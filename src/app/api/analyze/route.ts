@@ -20,10 +20,16 @@ ${cv}
 JOB DESCRIPTION:
 ${jd}
 
-1. Give a fit score from 0–100.
-2. List missing skills.
-3. Suggest ways to improve the match.
-  `.trim()
+Respond in this format:
+Score: <number>/100
+Suggestions: <your suggestions>
+
+End your message with this note:
+"⚠️ Reality Check:
+Even with a strong match, you may still get ghosted... or the dreaded “leider” email 😔.
+
+Keep applying, keep refining. One 'yes' is all you need."
+`.trim()
 
   try {
     const completion = await openai.chat.completions.create({
