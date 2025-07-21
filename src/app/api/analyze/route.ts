@@ -8,11 +8,18 @@ const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
 })
 
+
 export async function POST(req: Request) {
   const { cv, jd } = await req.json()
 
   const prompt = `
-You are a career coach AI. Compare this resume with the job description.
+You are a career coach AI. Compare this resume with the job description., analyze how well the candidate fits the role.
+Your evaluation must:
+- Be honest and strict
+- Identify missing skills or experiences
+- Reject irrelevant or meaningless job descriptions
+
+Give a final **score out of 100** based only on factual alignment
 
 RESUME:
 ${cv}
@@ -31,11 +38,15 @@ Even with a strong match, you may still get ghosted... or the dreaded â€œleiderâ
 Keep applying, keep refining. One 'yes' is all you need."
 `.trim()
 
+if (jd.length < 50 || !/[a-zA-Z]/.test(jd)) {
+  return NextResponse.json({ message: 'Invalid job description.' }, { status: 400 })
+}
+
   try {
     const completion = await openai.chat.completions.create({
       model: 'anthropic/claude-3-haiku',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
+      temperature: 0,
     })
 
     const message = completion.choices[0].message.content
