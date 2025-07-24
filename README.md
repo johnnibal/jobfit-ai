@@ -1,37 +1,74 @@
-# JobFit AI
+# 🧠 JobFit AI
 
-🎯 **JobFit AI** is an AI-powered resume analyzer that helps job seekers evaluate how well their CV matches a specific job description. It leverages OpenAI's GPT model to give a relevance score and personalized improvement suggestions.
+JobFit AI is an intelligent resume analyzer that matches a candidate’s CV with a job description using OpenAI's language model. It scores compatibility and gives tailored feedback — all from a sleek Next.js interface.
 
-## 🚀 Live Demo
-
-🌐 [Visit JobFit AI on Railway](https://jobfit-ai-production-9b53.up.railway.app/)
-
-> 📌 Replace the link with your actual Railway deployment URL.
+🔗 **Live Demo:** [https://jobfit-ai-production.up.railway.app](https://jobfit-ai-production.up.railway.app)
 
 ---
 
-## 🧠 Features
+## 📂 Project Structure
 
-- 📄 Upload your CV in PDF format
-- 📋 Paste a job description
-- 🤖 Get an AI-generated match score (0–100)
-- 💡 Suggestions for improving your CV
-- 🎨 Clean UI and mobile responsive
-- 🛡️ Reality check reminder for job seekers ("leider" emails are real!)
+```bash
+jobfit-ai/
+├── public/                # Static assets
+├── src/
+│   ├── app/
+│   │   └── api/analyze/   # API route that uses OpenAI
+│   ├── components/        # React components (UI, analyzer)
+│   └── styles/            # Tailwind & global styles
+├── types/                 # Custom TypeScript definitions
+├── .env.local             # Environment variables (not committed)
+└── README.md              # Project documentation
 
----
+
+
+## 🧠 AI Prompt Example
+You are a career coach AI. Given the following resume and job description, analyze how well the candidate fits the job.
+Give a score out of 100 for the fit, and provide suggestions for improvement.
+
+End your message with this note:
+"⚠️ Reality Check:
+Even with a strong match, you may still get ghosted... or the dreaded “leider” email 😔.
+
+Keep applying, keep refining. One 'yes' is all you need."
+
 
 ## 🛠️ Tech Stack
+Next.js 15 (App Router)
 
-| Layer            | Tech                                         |
-|------------------|----------------------------------------------|
-| Frontend         | Next.js, React, Tailwind CSS                 |
-| Backend/API      | Next.js API routes, TypeScript               |
-| AI Integration   | OpenAI via OpenRouter API                    |
-| PDF Text Parsing | `pdf-parse`, `pdfjs-dist`                    |
-| Hosting          | Railway                                      |
+React 18 with TypeScript
+
+Tailwind CSS
+
+pdfjs-dist – PDF parsing on client
+
+pdf-parse – PDF parsing on server
+
+OpenAI / OpenRouter – AI-based analysis
+
+Railway – Deployment
+
+GitHub – Version control
 
 ---
 
-## 📁 Project Structure
+## 🧪 Running Locally
+Prerequisites
+Node.js (v18+)
 
+pnpm / npm / yarn
+
+OpenAI API Key (or via OpenRouter)
+
+Steps
+bash
+Copy
+Edit
+git clone https://github.com/johnnibal/jobfit-ai
+cd jobfit-ai
+
+pnpm install
+
+
+
+pnpm dev
