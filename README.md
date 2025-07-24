@@ -1,67 +1,37 @@
-HEAD
-# 💼 JobFit.AI – AI-Powered Resume Matcher
+# JobFit AI
 
-JobFit.AI is a full-stack AI tool that analyzes how well a developer's resume matches a job description. It uses Claude (via OpenRouter) to extract a fit score, identify gaps, and suggest personalized improvements.
+🎯 **JobFit AI** is an AI-powered resume analyzer that helps job seekers evaluate how well their CV matches a specific job description. It leverages OpenAI's GPT model to give a relevance score and personalized improvement suggestions.
 
-## 🚀 Features
+## 🚀 Live Demo
 
-- ✅ Upload a CV as a **PDF** or paste plain text
-- ✅ Paste any **job description**
-- ✅ Uses **Claude 3** via OpenRouter to return:
-  - Fit score (0–100)
-  - Missing skills
-  - Tailored suggestions
-- ✅ Built with **Next.js (App Router)**, **TypeScript**, **TailwindCSS**
-- ✅ Secure: PDF parsing is done client-side for privacy
+🌐 [Visit JobFit AI on Railway](https://jobfit-ai-production-9b53.up.railway.app/)
 
-## 🧠 Tech Stack
+> 📌 Replace the link with your actual Railway deployment URL.
 
-- **Frontend**: Next.js (App Router), TailwindCSS, TypeScript
-- **LLM Backend**: Claude 3 via [OpenRouter](https://openrouter.ai)
-- **PDF Parsing**: `pdfjs-dist` (client-side)
-- **Deployment**: Vercel (recommended)
+---
 
-## 📄 How to Run
+## 🧠 Features
 
-```bash
-git clone https://github.com/your-username/jobfit-ai.git
-cd jobfit-ai
-npm install
-=======
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+- 📄 Upload your CV in PDF format
+- 📋 Paste a job description
+- 🤖 Get an AI-generated match score (0–100)
+- 💡 Suggestions for improving your CV
+- 🎨 Clean UI and mobile responsive
+- 🛡️ Reality check reminder for job seekers ("leider" emails are real!)
 
-## Getting Started
+---
 
-First, run the development server:
+## 🛠️ Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+| Layer            | Tech                                         |
+|------------------|----------------------------------------------|
+| Frontend         | Next.js, React, Tailwind CSS                 |
+| Backend/API      | Next.js API routes, TypeScript               |
+| AI Integration   | OpenAI via OpenRouter API                    |
+| PDF Text Parsing | `pdf-parse`, `pdfjs-dist`                    |
+| Hosting          | Railway                                      |
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-e63e088 (docs: add changelog and LLM integration notes)
