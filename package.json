@@ -10,8 +10,9 @@
   },
   "dependencies": {
     "@netlify/next": "^1.4.9",
-    "next": "15.3.5",
+    "next": "15.3.8",
     "openai": "^5.9.2",
+    "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^3.4.120",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -20,6 +21,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
