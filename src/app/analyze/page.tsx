@@ -110,7 +110,7 @@ export default function AnalyzePage() {
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
           <form
             onSubmit={handleSubmit}
             className="rounded-[28px] border border-slate-800 bg-slate-900/70 p-6 shadow-[0_0_60px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:p-8"
