@@ -1,74 +1,117 @@
-# 🧠 JobFit AI
+# JobFit AI
 
-JobFit AI is an intelligent resume analyzer that matches a candidate’s CV with a job description using OpenAI's language model. It scores compatibility and gives tailored feedback — all from a sleek Next.js interface.
+JobFit AI is a Next.js app that compares a candidate CV against a job description, calculates a match score, highlights gaps, and suggests resume improvements through an AI-powered analysis flow.
 
-🔗 **Live Demo:** [https://jobfit-ai-production.up.railway.app](https://jobfit-ai-production.up.railway.app)
+## Stack
 
----
+- Next.js 15 App Router
+- React 19 + TypeScript
+- Tailwind CSS
+- `pdfjs-dist` for client-side PDF extraction
+- OpenRouter via the `openai` SDK
+- Railway for deployment
 
-## 📂 Project Structure
+## Main Features
+
+- Animated AI-themed landing page
+- CV upload and PDF text extraction
+- Job description analysis workflow
+- Structured AI response with match score, verdict, strengths, gaps, and reality check
+- Deployment-ready production build
+
+## Local Development
+
+### Requirements
+
+- Node.js 18 or newer
+- npm
+- An OpenRouter API key
+
+### Environment Variables
+
+Create a local env file:
 
 ```bash
-jobfit-ai/
-├── public/                # Static assets
-├── src/
-│   ├── app/
-│   │   └── api/analyze/   # API route that uses OpenAI
-│   ├── components/        # React components (UI, analyzer)
-│   └── styles/            # Tailwind & global styles
-├── types/                 # Custom TypeScript definitions
-├── .env.local             # Environment variables (not committed)
-└── README.md              # Project documentation
+cp .env.example .env.local
+```
 
+Then set:
 
+```bash
+OPENROUTER_API_KEY=your_openrouter_api_key
+```
 
-## 🧠 AI Prompt Example
-You are a career coach AI. Given the following resume and job description, analyze how well the candidate fits the job.
-Give a score out of 100 for the fit, and provide suggestions for improvement.
+### Run Locally
 
-End your message with this note:
-"⚠️ Reality Check:
-Even with a strong match, you may still get ghosted... or the dreaded “leider” email 😔.
+```bash
+npm install
+npm run dev
+```
 
-Keep applying, keep refining. One 'yes' is all you need."
+App URLs:
 
+- `http://localhost:3000` for the dev server
+- `http://localhost:3000/analyze` for the analyzer page
 
-## 🛠️ Tech Stack
-Next.js 15 (App Router)
+## Production Checks
 
-React 18 with TypeScript
+Before deploying, run:
 
-Tailwind CSS
+```bash
+npm run lint
+npm run build
+```
 
-pdfjs-dist – PDF parsing on client
+Both should pass before pushing to GitHub.
 
-pdf-parse – PDF parsing on server
+## Railway Deployment
 
-OpenAI / OpenRouter – AI-based analysis
+This project can be deployed directly from your GitHub repository in Railway.
 
-Railway – Deployment
+### 1. Push your latest changes
 
-GitHub – Version control
+```bash
+git add .
+git commit -m "Prepare app for deployment"
+git push
+```
 
----
+### 2. Open your Railway project
 
-## 🧪 Running Locally
-Prerequisites
-Node.js (v18+)
+- Go to your existing Railway project
+- Open the service connected to this GitHub repo
+- Trigger a redeploy, or push to the connected branch
 
-pnpm / npm / yarn
+### 3. Set the required environment variable
 
-OpenAI API Key (or via OpenRouter)
+In Railway, add:
 
-Steps
-bash
-Copy
-Edit
-git clone https://github.com/johnnibal/jobfit-ai
-cd jobfit-ai
+```bash
+OPENROUTER_API_KEY=your_openrouter_api_key
+```
 
-pnpm install
+Without this variable, the UI pages will load but `/api/analyze` will return a server error.
 
+### 4. Railway build/runtime settings
 
+Railway should auto-detect this project as a Next.js app. If you need to set commands manually, use:
 
-pnpm dev
+```bash
+Build command: npm run build
+Start command: npm run start
+```
+
+### 5. Verify after deploy
+
+Check:
+
+- `/` loads correctly
+- `/analyze` loads correctly
+- CV upload works
+- AI analysis returns a score and formatted response
+
+## Deployment Notes
+
+- The PDF parser is loaded only in the browser during file upload, which avoids build-time issues in production.
+- The API route now fails cleanly if `OPENROUTER_API_KEY` is missing.
+- If Railway has an older deployment cached, a fresh redeploy after pushing the latest code is recommended.
