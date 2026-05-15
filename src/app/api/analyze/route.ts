@@ -1,7 +1,27 @@
 export const runtime = 'nodejs'
 
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { getAuthenticatedJobFitUserId } from '@/lib/auth/authenticatedUser'
+import {
+  decrementAnalysisUsage,
+  incrementAnalysisUsage,
+  JobFitQuotaExceededError,
+  resolveAnalysisQuotaSubject,
+  usageLimitsDisabled,
+} from '@/lib/monetizationUsage.server'
+import {
+  JOBFIT_MONTHLY_PRO_COOKIE,
+  verifyMonthlyProEntitlementCookie,
+} from '@/lib/billing/signedPremiumCookie'
+import {
+  JOBFIT_ANON_COOKIE,
+  mintAnonymousSessionId,
+  signAnonymousSessionId,
+  verifyAnonymousCookie,
+} from '@/lib/usage/anonymousCookie'
+import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
 
 function buildAnalysisPrompt(cv: string, jd: string) {
   return `
@@ -52,6 +72,11 @@ Interview Readiness:
 Reality Check:
 <1 short, encouraging but realistic paragraph>
 
+ATS Keyword Checklist:
+- <keyword or phrase from the job description>: <Present | Partial | Missing> — <one short evidence-based note tied to the CV>
+- <keyword or phrase>: <Present | Partial | Missing> — <note>
+- Provide at least 5 checklist lines whenever the job description contains enough concrete requirements; otherwise provide only grounded items.
+
 Important:
 - If there are fewer than 3 good items for a section, provide only the valid ones.
 - If the CV or job description is too weak to assess properly, say that explicitly and lower the score accordingly.
@@ -66,24 +91,90 @@ ${jd}
 }
 
 export async function POST(req: Request) {
-  const { cv, jd } = await req.json()
-  const normalizedCv = typeof cv === 'string' ? cv.trim() : ''
-  const normalizedJd = typeof jd === 'string' ? jd.trim() : ''
+  const jar = await cookies()
+  const anonVerified = verifyAnonymousCookie(jar.get(JOBFIT_ANON_COOKIE)?.value)
+  let signedAnon: string | null = null
+  const anonymousSessionId = anonVerified ?? mintAnonymousSessionId()
+  if (!anonVerified) {
+    signedAnon = signAnonymousSessionId(anonymousSessionId)
+  }
+
+  const respond = (payload: unknown, status: number) => {
+    const res = NextResponse.json(payload, { status })
+    applyAnonymousSessionCookie(res, signedAnon)
+    return res
+  }
+
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return respond({ error: 'Invalid JSON body.' }, 400)
+  }
+
+  const rec = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
+  const cvRaw = rec.cv
+  const jdRaw = rec.jd
+
+  const normalizedCv = typeof cvRaw === 'string' ? cvRaw.trim() : ''
+  const normalizedJd = typeof jdRaw === 'string' ? jdRaw.trim() : ''
+
+  const monthlyStripeCustomerFromBillingCookie = verifyMonthlyProEntitlementCookie(
+    jar.get(JOBFIT_MONTHLY_PRO_COOKIE)?.value
+  )
+
   const apiKey = process.env.OPENROUTER_API_KEY
 
   if (normalizedCv.length < 50 || !/[a-zA-Z]/.test(normalizedCv)) {
-    return NextResponse.json({ message: 'Please provide a valid CV or resume text.' }, { status: 400 })
+    return respond({ message: 'Please provide a valid CV or resume text.' }, 400)
   }
 
   if (normalizedJd.length < 50 || !/[a-zA-Z]/.test(normalizedJd)) {
-    return NextResponse.json({ message: 'Please provide a valid job description.' }, { status: 400 })
+    return respond({ message: 'Please provide a valid job description.' }, 400)
   }
 
   if (!apiKey) {
-    return NextResponse.json(
-      { error: 'OPENROUTER_API_KEY is not configured on the server.' },
-      { status: 500 }
-    )
+    return respond({ error: 'OPENROUTER_API_KEY is not configured on the server.' }, 500)
+  }
+
+  const authenticatedUserId = await getAuthenticatedJobFitUserId()
+
+  let subject
+  let mode: 'daily' | 'monthly'
+
+  try {
+    const resolved = await resolveAnalysisQuotaSubject({
+      monthlyStripeCustomerFromBillingCookie,
+      anonymousSessionId,
+      authenticatedUserId,
+    })
+    subject = resolved.subject
+    mode = resolved.mode
+  } catch (e) {
+    console.error('[analyze] resolve quota subject', e)
+    return respond({ error: 'Could not resolve usage quota.' }, 503)
+  }
+
+  let quotaConsumed = false
+
+  if (!usageLimitsDisabled()) {
+    try {
+      await incrementAnalysisUsage(subject, mode)
+      quotaConsumed = true
+    } catch (e) {
+      if (e instanceof JobFitQuotaExceededError) {
+        return respond(
+          {
+            error: 'Analysis quota exceeded.',
+            code: e.code,
+            quota: { mode: e.mode, limit: e.limit, used: e.used, remaining: 0 },
+          },
+          429
+        )
+      }
+      console.error('[analyze] quota increment', e)
+      return respond({ error: 'Could not verify usage quota.' }, 503)
+    }
   }
 
   const prompt = buildAnalysisPrompt(normalizedCv, normalizedJd)
@@ -111,20 +202,24 @@ export async function POST(req: Request) {
     const message = typeof rawMessage === 'string' ? rawMessage.trim() : ''
 
     if (!message) {
-      return NextResponse.json({ error: 'AI analysis returned an empty response.' }, { status: 502 })
+      if (quotaConsumed && !usageLimitsDisabled()) {
+        await decrementAnalysisUsage(subject, mode).catch(() => {})
+      }
+      return respond({ error: 'AI analysis returned an empty response.' }, 502)
     }
 
-    return NextResponse.json({ message })
+    return respond({ message }, 200)
   } catch (error: unknown) {
+    if (quotaConsumed && !usageLimitsDisabled()) {
+      await decrementAnalysisUsage(subject, mode).catch(() => {})
+    }
+
     if (error instanceof Error) {
       console.error('OpenRouter API Error:', error.message)
     } else {
       console.error('Unknown error:', error)
     }
 
-    return NextResponse.json(
-      { error: 'OpenRouter AI analysis failed.' },
-      { status: 500 }
-    )
+    return respond({ error: 'OpenRouter AI analysis failed.' }, 500)
   }
 }
