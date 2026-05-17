@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import type Stripe from 'stripe'
+import Stripe from 'stripe'
 import { subscriptionGrantsMonthlyPro } from '@/lib/billing/subscriptionAccess'
 import { prisma } from '@/lib/prisma'
 import { getPublicAppUrl } from '@/lib/appUrl'
@@ -38,13 +38,7 @@ export async function POST() {
     const jar = await cookies()
     const cookieCustomer = verifyMonthlyProEntitlementCookie(jar.get(JOBFIT_MONTHLY_PRO_COOKIE)?.value)
 
-    const params: Stripe.Checkout.SessionCreateParams = {
-      mode: 'subscription',
-      line_items: [{ price: priceId.trim(), quantity: 1 }],
-      success_url: `${appUrl}/checkout/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/checkout/cancel`,
-      metadata: { jobfit_product: 'monthly_pro' },
-    }
+    let customerId: string
 
     if (cookieCustomer?.startsWith('cus_')) {
       const existing = await prisma.billingAccount.findUnique({
@@ -59,9 +53,22 @@ export async function POST() {
           { status: 409 }
         )
       }
-      params.customer = cookieCustomer
+      customerId = cookieCustomer
     } else {
-      params.customer_creation = 'always'
+      // Subscription mode does not support `customer_creation`; create a Customer first, then pass `customer`.
+      const customer = await stripe.customers.create({
+        metadata: { jobfit_product: 'monthly_pro' },
+      })
+      customerId = customer.id
+    }
+
+    const params: Stripe.Checkout.SessionCreateParams = {
+      mode: 'subscription',
+      customer: customerId,
+      line_items: [{ price: priceId.trim(), quantity: 1 }],
+      success_url: `${appUrl}/checkout/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/checkout/cancel`,
+      metadata: { jobfit_product: 'monthly_pro' },
     }
 
     const session = await stripe.checkout.sessions.create(params)
@@ -72,7 +79,15 @@ export async function POST() {
 
     return NextResponse.json({ url: session.url })
   } catch (e) {
-    console.error('[checkout/monthly-pro]', e)
+    if (e instanceof Stripe.errors.StripeError) {
+      console.error('[checkout/monthly-pro]', {
+        stripeType: e.type,
+        code: e.code,
+        message: e.message,
+      })
+    } else {
+      console.error('[checkout/monthly-pro]', e instanceof Error ? e.message : 'unknown_error')
+    }
     return NextResponse.json({ error: 'Unable to start subscription checkout.' }, { status: 500 })
   }
 }
