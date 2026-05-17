@@ -12,6 +12,7 @@ import { trackEvent } from '@/lib/analytics/track'
 
 import type { AppliedProPromo } from '@/components/billing/ProReportPromoBox'
 import { ProReportPromoBox } from '@/components/billing/ProReportPromoBox'
+import { useBillingSandboxEnvironment } from '@/lib/billing/useBillingSandboxEnvironment'
 
 export type ConversionUpgradeVariant = 'conversion' | 'quota_daily' | 'quota_monthly'
 
@@ -52,6 +53,7 @@ export function ConversionUpgradeModal({
   const [proBusy, setProBusy] = useState(false)
   const [proErr, setProErr] = useState<string | null>(null)
   const [appliedPromo, setAppliedPromo] = useState<AppliedProPromo | null>(null)
+  const billingSandboxVisible = useBillingSandboxEnvironment()
 
   useEffect(() => {
     if (!open) setAppliedPromo(null)
@@ -92,8 +94,16 @@ export function ConversionUpgradeModal({
 
       if (!res.ok) {
         if (res.status === 503 && data.fallbackDemo) {
-          scrollToSandbox()
-          setProErr(typeof data.error === 'string' ? data.error : 'Billing unavailable — use the sandbox below.')
+          if (billingSandboxVisible) {
+            scrollToSandbox()
+            setProErr(typeof data.error === 'string' ? data.error : 'Billing unavailable — use the sandbox below.')
+          } else {
+            setProErr(
+              typeof data.error === 'string'
+                ? data.error
+                : 'Checkout is not configured. Add Stripe keys and price IDs in the deployment environment.'
+            )
+          }
           return
         }
         if (res.status === 409) {
@@ -125,6 +135,7 @@ export function ConversionUpgradeModal({
     onApplyProReportCredit,
     onClose,
     scrollToSandbox,
+    billingSandboxVisible,
   ])
 
   const handleUpgradeMonthlyClick = useCallback(() => {

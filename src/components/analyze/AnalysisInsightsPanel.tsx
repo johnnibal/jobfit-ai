@@ -30,9 +30,42 @@ import {
 } from '@/lib/coverLetterOptions'
 import { parseAnalysisSections, stripMatchScorePrefix } from '@/lib/parseAnalysis'
 import { buildJobFitReportPdfHtml } from '@/lib/pdf/jobFitReportPdf'
+import { useBillingSandboxEnvironment } from '@/lib/billing/useBillingSandboxEnvironment'
 import { trackEvent } from '@/lib/analytics/track'
 
 const SHORT_SUMMARY_MAX_CHARS = 320
+
+/** Shown when Pro Report checkout is attempted without a completed analysis session id. */
+const MISSING_ANALYSIS_UNLOCK_MSG = 'Run an analysis first to unlock a Pro Report.'
+
+function ProReportMonthlyComparison() {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+      <div className="rounded-2xl border border-violet-400/35 bg-violet-500/[0.07] p-4">
+        <p className="text-sm font-semibold text-violet-50">
+          Pro Report · €{PRICE_PRO_REPORT_EUR} one-time
+        </p>
+        <ul className="mt-3 space-y-1.5 text-xs leading-relaxed text-slate-400">
+          <li>Unlocks this one application report</li>
+          <li>Full suggestions</li>
+          <li>ATS checklist</li>
+          <li>Cover letter</li>
+          <li>PDF export</li>
+        </ul>
+      </div>
+      <div className="rounded-2xl border border-cyan-400/30 bg-cyan-500/[0.06] p-4">
+        <p className="text-sm font-semibold text-cyan-50">
+          Monthly Pro · €{PRICE_MONTHLY_PRO_EUR}/month
+        </p>
+        <ul className="mt-3 space-y-1.5 text-xs leading-relaxed text-slate-400">
+          <li>More analyses</li>
+          <li>Saved reports</li>
+          <li>Best for active job seekers</li>
+        </ul>
+      </div>
+    </div>
+  )
+}
 
 /** Free tier: ATS checklist lines visible before blur / unlock CTA. */
 const FREE_ATS_VISIBLE_COUNT = 5
@@ -104,6 +137,7 @@ function UnlockProReportCta({
   checkoutSurface = 'insights_panel',
   variant = 'primary',
   fullWidth,
+  emphasize,
 }: {
   analysisId: string | null
   proReportCreditsCount: number
@@ -111,10 +145,13 @@ function UnlockProReportCta({
   checkoutSurface?: string
   variant?: 'primary' | 'outline'
   fullWidth?: boolean
+  /** Larger touch target and text for high-visibility placement. */
+  emphasize?: boolean
 }) {
   const [stripeBusy, setStripeBusy] = useState(false)
   const [stripeErr, setStripeErr] = useState<string | null>(null)
   const [appliedPromo, setAppliedPromo] = useState<AppliedProPromo | null>(null)
+  const billingSandboxVisible = useBillingSandboxEnvironment()
 
   useEffect(() => {
     setAppliedPromo(null)
@@ -125,11 +162,14 @@ function UnlockProReportCta({
   }
 
   const handleClick = async () => {
+    if (!analysisId) {
+      setStripeErr(MISSING_ANALYSIS_UNLOCK_MSG)
+      return
+    }
     if (analysisId && proReportCreditsCount > 0) {
       onApplyProReportCredit()
       return
     }
-    if (!analysisId) return
 
     setStripeErr(null)
     setStripeBusy(true)
@@ -149,8 +189,16 @@ function UnlockProReportCta({
 
       if (!res.ok) {
         if (res.status === 503 && data.fallbackDemo) {
-          scrollToSandbox()
-          setStripeErr(typeof data.error === 'string' ? data.error : 'Billing unavailable — use the sandbox below.')
+          if (billingSandboxVisible) {
+            scrollToSandbox()
+            setStripeErr(typeof data.error === 'string' ? data.error : 'Billing unavailable — use the sandbox below.')
+          } else {
+            setStripeErr(
+              typeof data.error === 'string'
+                ? data.error
+                : 'Checkout is not configured. Add Stripe keys and price IDs in the deployment environment.'
+            )
+          }
           return
         }
         if (res.status === 409) {
@@ -185,6 +233,10 @@ function UnlockProReportCta({
       ? 'border-transparent bg-gradient-to-r from-cyan-400 via-sky-500 to-violet-500 text-slate-950 shadow-[0_0_24px_rgba(139,92,246,0.28)] hover:scale-[1.01] hover:shadow-[0_0_32px_rgba(56,189,248,0.35)]'
       : 'border-violet-400/35 bg-violet-500/10 text-violet-100 hover:border-violet-400/55 hover:bg-violet-500/15'
 
+  const sizeClass = emphasize
+    ? 'min-h-[52px] px-6 py-3 text-[15px] sm:text-base'
+    : 'min-h-[48px] px-5 py-2.5 text-sm'
+
   const buttonLabel =
     stripeBusy
       ? 'Opening checkout…'
@@ -212,11 +264,10 @@ function UnlockProReportCta({
       <button
         type="button"
         onClick={() => void handleClick()}
-        className={`inline-flex min-h-[44px] w-full items-center justify-center rounded-full border px-5 py-2.5 text-center text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${base}`}
-        disabled={!analysisId || stripeBusy}
+        className={`inline-flex w-full items-center justify-center rounded-full border text-center font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${sizeClass} ${base}`}
         title={
           !analysisId
-            ? 'Run an analysis first to attach Pro Report to this application.'
+            ? MISSING_ANALYSIS_UNLOCK_MSG
             : proReportCreditsCount > 0
               ? 'Apply your Pro Report demo credit.'
               : stripeBusy
@@ -230,10 +281,9 @@ function UnlockProReportCta({
       </button>
       {readyHint ? <p className="mt-2 text-center text-[11px] text-emerald-300/90">{readyHint}</p> : null}
       {stripeErr ? (
-        <p className="mt-2 text-center text-[11px] leading-relaxed text-amber-200/95">{stripeErr}</p>
-      ) : null}
-      {!analysisId ? (
-        <p className="mt-2 text-center text-[11px] text-slate-500">Run analysis above to enable payment.</p>
+        <p className="mt-2 text-center text-[12px] leading-relaxed text-amber-200/95">{stripeErr}</p>
+      ) : !analysisId ? (
+        <p className="mt-2 text-center text-sm leading-snug text-slate-300">{MISSING_ANALYSIS_UNLOCK_MSG}</p>
       ) : null}
     </div>
   )
@@ -375,6 +425,8 @@ export function AnalysisInsightsPanel({
   const [atsPremiumLoading, setAtsPremiumLoading] = useState(false)
   const [atsPremiumErr, setAtsPremiumErr] = useState<string | null>(null)
   const [atsPremiumHandled, setAtsPremiumHandled] = useState(false)
+
+  const billingSandboxVisible = useBillingSandboxEnvironment()
 
   const permissionCtx: AnalysisPermissionContext = useMemo(
     () =>
@@ -670,6 +722,19 @@ export function AnalysisInsightsPanel({
         {MONTHLY_PRO_ANALYSES_PER_MONTH} analyses per UTC month, saved reports, and subscriber tooling via Stripe.
       </p>
 
+      {result && gatedFree ? (
+        <div className="mt-5">
+          <UnlockProReportCta
+            emphasize
+            fullWidth
+            checkoutSurface="insights_after_explanation"
+            analysisId={analysisId}
+            proReportCreditsCount={proReportCreditsCount}
+            onApplyProReportCredit={onApplyProReportCredit}
+          />
+        </div>
+      ) : null}
+
       <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-300">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="font-semibold text-slate-200">Billing profile</span>
@@ -682,6 +747,23 @@ export function AnalysisInsightsPanel({
             Refresh status
           </button>
         </div>
+        {!monthlyProActive ? (
+          <div className="mt-4 space-y-4 border-t border-slate-800/80 pt-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Compare upgrades</p>
+            <ProReportMonthlyComparison />
+            <UnlockProReportCta
+              emphasize
+              fullWidth
+              checkoutSurface="insights_billing_compare"
+              analysisId={analysisId}
+              proReportCreditsCount={proReportCreditsCount}
+              onApplyProReportCredit={onApplyProReportCredit}
+            />
+            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Or subscribe for ongoing use
+            </p>
+          </div>
+        ) : null}
         {billing.error ? <p className="mt-2 text-xs leading-relaxed text-amber-200/95">{billing.error}</p> : null}
         {billing.loading ? <p className="mt-2 text-xs text-slate-500">Loading subscription state…</p> : null}
         {!billing.loading && billing.fetched ? (
@@ -821,34 +903,36 @@ export function AnalysisInsightsPanel({
 
           {gatedFree ? (
             <div className="rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/10 via-slate-900/60 to-cyan-500/5 p-4 sm:p-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-violet-100">See everything recruiters scrutinize next</p>
                   <p className="mt-1 text-xs leading-relaxed text-slate-400">
                     One-time Pro Report for this posting — full CV report, ATS checklist, cover letter, and PDF export for
                     €{PRICE_PRO_REPORT_EUR}.
                   </p>
-                  <Link
-                    href="/pro-report"
-                    className="mt-2 inline-block text-xs font-medium text-violet-400/90 underline-offset-4 hover:text-violet-300 hover:underline"
-                  >
-                    What is Pro Report? →
-                  </Link>
-                  <Link
-                    href="/pricing"
-                    className="mt-2 inline-block text-xs font-medium text-cyan-400/90 underline-offset-4 hover:text-cyan-300 hover:underline"
-                  >
-                    Compare plans →
-                  </Link>
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+                    <Link
+                      href="/pro-report"
+                      className="text-xs font-medium text-violet-400/90 underline-offset-4 hover:text-violet-300 hover:underline"
+                    >
+                      What is Pro Report? →
+                    </Link>
+                    <Link
+                      href="/pricing"
+                      className="text-xs font-medium text-cyan-400/90 underline-offset-4 hover:text-cyan-300 hover:underline"
+                    >
+                      Compare plans →
+                    </Link>
+                  </div>
                 </div>
-                <div className="w-full shrink-0 sm:max-w-[220px]">
-                  <UnlockProReportCta
-                    analysisId={analysisId}
-                    proReportCreditsCount={proReportCreditsCount}
-                    onApplyProReportCredit={onApplyProReportCredit}
-                    checkoutSurface="insights_top_banner"
-                  />
-                </div>
+                <UnlockProReportCta
+                  emphasize
+                  fullWidth
+                  analysisId={analysisId}
+                  proReportCreditsCount={proReportCreditsCount}
+                  onApplyProReportCredit={onApplyProReportCredit}
+                  checkoutSurface="insights_overview_banner"
+                />
               </div>
             </div>
           ) : null}
@@ -899,6 +983,18 @@ export function AnalysisInsightsPanel({
                 <li className="text-sm text-slate-500">No structured bullets parsed yet.</li>
               ) : null}
             </ul>
+            {gatedFree ? (
+              <div className="mt-5">
+                <UnlockProReportCta
+                  emphasize
+                  fullWidth
+                  analysisId={analysisId}
+                  proReportCreditsCount={proReportCreditsCount}
+                  onApplyProReportCredit={onApplyProReportCredit}
+                  checkoutSurface="insights_after_suggestions"
+                />
+              </div>
+            ) : null}
           </div>
 
           {/* ATS — free preview (5 lines) vs premium structured checklist */}
@@ -941,24 +1037,25 @@ export function AnalysisInsightsPanel({
                     </span>
                   </div>
                 </div>
-                <div className="mt-4">
+                <div className="mt-4 space-y-3">
+                  <UnlockProReportCta
+                    emphasize
+                    fullWidth
+                    analysisId={analysisId}
+                    proReportCreditsCount={proReportCreditsCount}
+                    onApplyProReportCredit={onApplyProReportCredit}
+                    checkoutSurface="insights_ats_unlock"
+                  />
                   {showConversionUpsell && onOpenUpgradeModal ? (
                     <button
                       type="button"
                       onClick={() => bumpUpgradeFromLocked('ats_full_checklist')}
-                      className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full border border-violet-400/45 bg-violet-500/15 px-5 py-2.5 text-sm font-semibold text-violet-50 shadow-[0_0_24px_rgba(139,92,246,0.12)] transition hover:bg-violet-500/25"
+                      className="flex w-full min-h-[40px] items-center justify-center gap-2 rounded-full border border-slate-600 bg-slate-950/80 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:border-violet-400/35 hover:text-violet-100"
                     >
-                      <LockIcon className="text-violet-200/90" />
-                      Unlock full ATS checklist
+                      <LockIcon className="text-violet-300/90" />
+                      See upgrade options
                     </button>
-                  ) : (
-                    <UnlockProReportCta
-                      analysisId={analysisId}
-                      proReportCreditsCount={proReportCreditsCount}
-                      onApplyProReportCredit={onApplyProReportCredit}
-                      checkoutSurface="insights_ats_checkout_fallback"
-                    />
-                  )}
+                  ) : null}
                 </div>
               </>
             ) : (
@@ -1111,9 +1208,11 @@ export function AnalysisInsightsPanel({
               <div>
                 <SectionHeading>Included with Pro Report</SectionHeading>
                 <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                  Free analysis is complete — these items stay locked until you unlock. Use{' '}
-                  <span className="text-slate-300">{UNLOCK_PRO_REPORT_CTA_LABEL}</span> (secure Stripe checkout). Optional
-                  sandbox tools are at the bottom of this panel for local testing.
+                  Free analysis is complete — these items stay locked until you unlock with{' '}
+                  <span className="text-slate-300">{UNLOCK_PRO_REPORT_CTA_LABEL}</span> (Stripe).
+                  {billingSandboxVisible ? (
+                    <span> Optional demo tools are at the bottom of this panel when testing locally.</span>
+                  ) : null}
                 </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-1">
                   {lockedCardPreviews.map((card) => (
@@ -1129,6 +1228,7 @@ export function AnalysisInsightsPanel({
                 </div>
                 <div className="mt-6">
                   <UnlockProReportCta
+                    emphasize
                     analysisId={analysisId}
                     proReportCreditsCount={proReportCreditsCount}
                     onApplyProReportCredit={onApplyProReportCredit}
@@ -1144,8 +1244,9 @@ export function AnalysisInsightsPanel({
                 <p className="mt-2 text-center text-xs leading-relaxed text-slate-400">
                   Same analysis — we are not re-running AI until you choose. Unlock adds detail you already earned.
                 </p>
-                <div className="mx-auto mt-4 max-w-sm">
+                <div className="mx-auto mt-4 max-w-md">
                   <UnlockProReportCta
+                    emphasize
                     analysisId={analysisId}
                     proReportCreditsCount={proReportCreditsCount}
                     onApplyProReportCredit={onApplyProReportCredit}
@@ -1339,6 +1440,22 @@ export function AnalysisInsightsPanel({
                 Export PDF
               </button>
             </div>
+            {gatedFree && !canExportPDF(permissionCtx) ? (
+              <div className="mt-5 max-w-lg">
+                <p className="mb-3 text-xs leading-relaxed text-slate-500">
+                  Export unlocks with Pro Report (this job) or Monthly Pro. Use the button below for secure Stripe
+                  Checkout.
+                </p>
+                <UnlockProReportCta
+                  emphasize
+                  fullWidth
+                  analysisId={analysisId}
+                  proReportCreditsCount={proReportCreditsCount}
+                  onApplyProReportCredit={onApplyProReportCredit}
+                  checkoutSurface="insights_pdf_pro_report"
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -1376,35 +1493,37 @@ export function AnalysisInsightsPanel({
         )}
       </div>
 
-      <div id="jobfit-billing-sandbox" className="mt-8 scroll-mt-28 rounded-2xl border border-dashed border-slate-700/90 bg-slate-950/40 p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Billing sandbox · local device only
-        </p>
-        <p className="mt-2 text-xs leading-relaxed text-slate-500">
-          Local-only shortcuts. With a saved Stripe customer id, Monthly Pro demo toggle is ignored — subscription status
-          comes from Stripe webhooks instead. Pricing:{' '}
-          <Link href="/pricing" className="text-cyan-500/90 underline-offset-2 hover:underline">
-            /pricing
-          </Link>
-          .
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onDemoAddProCredit}
-            className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:border-violet-400/35"
-          >
-            Simulate Pro Report purchase (+1 credit)
-          </button>
-          <button
-            type="button"
-            onClick={onDemoToggleMonthlyPro}
-            className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:border-cyan-400/35"
-          >
-            Toggle Monthly Pro demo
-          </button>
+      {billingSandboxVisible ? (
+        <div id="jobfit-billing-sandbox" className="mt-8 scroll-mt-28 rounded-2xl border border-dashed border-slate-700/90 bg-slate-950/40 p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Billing sandbox · local device only
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+            Local-only shortcuts. With a saved Stripe customer id, Monthly Pro demo toggle is ignored — subscription status
+            comes from Stripe webhooks instead. Pricing:{' '}
+            <Link href="/pricing" className="text-cyan-500/90 underline-offset-2 hover:underline">
+              /pricing
+            </Link>
+            .
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onDemoAddProCredit}
+              className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:border-violet-400/35"
+            >
+              Simulate Pro Report purchase (+1 credit)
+            </button>
+            <button
+              type="button"
+              onClick={onDemoToggleMonthlyPro}
+              className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:border-cyan-400/35"
+            >
+              Toggle Monthly Pro demo
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
     </aside>
   )
 }
