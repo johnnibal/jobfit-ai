@@ -6,6 +6,7 @@ import {
   MONTHLY_PRO_ANALYSES_PER_MONTH,
   PRICE_MONTHLY_PRO_EUR,
   PRICE_PRO_REPORT_EUR,
+  UNLOCK_PRO_REPORT_CTA_LABEL,
 } from '@/lib/planTypes'
 import { trackEvent } from '@/lib/analytics/track'
 
@@ -79,6 +80,7 @@ export function ConversionUpgradeModal({
       trackEvent('stripe_checkout_started', { product: 'pro_report', surface: 'conversion_modal' })
       const res = await fetch('/api/checkout/pro-report', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           analysisId,
@@ -254,8 +256,8 @@ export function ConversionUpgradeModal({
                   : proReportCreditsCount > 0
                     ? 'Apply demo credit'
                     : appliedPromo
-                      ? `Unlock · €${appliedPromo.discountedEur.toFixed(2)}`
-                      : 'Unlock this report'}
+                      ? `Unlock Pro Report · €${appliedPromo.discountedEur.toFixed(2)}`
+                      : UNLOCK_PRO_REPORT_CTA_LABEL}
               </button>
               {proReportCreditsCount > 0 ? (
                 <p className="mt-2 text-center text-[11px] text-emerald-300/90">Demo credit applies instantly.</p>

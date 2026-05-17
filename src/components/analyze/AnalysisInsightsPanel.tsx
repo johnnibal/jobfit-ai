@@ -15,7 +15,13 @@ import {
   shouldGateAnalysisSections,
   type AnalysisPermissionContext,
 } from '@/lib/analysisPermissions'
-import { PRICE_MONTHLY_PRO_EUR, PRICE_PRO_REPORT_EUR, FREE_VISIBLE_SUGGESTION_COUNT, MONTHLY_PRO_ANALYSES_PER_MONTH } from '@/lib/planTypes'
+import {
+  PRICE_MONTHLY_PRO_EUR,
+  PRICE_PRO_REPORT_EUR,
+  FREE_VISIBLE_SUGGESTION_COUNT,
+  MONTHLY_PRO_ANALYSES_PER_MONTH,
+  UNLOCK_PRO_REPORT_CTA_LABEL,
+} from '@/lib/planTypes'
 import {
   COVER_LETTER_LANGUAGES,
   COVER_LETTER_TONES,
@@ -81,12 +87,14 @@ function LockIcon({ className }: { className?: string }) {
   )
 }
 
-const UNLOCK_BASE = `Unlock Pro Report for €${PRICE_PRO_REPORT_EUR}`
-
 function lockedPreviewCardFeature(title: string): string {
-  if (title === 'Full CV improvement report') return 'preview_cv_report'
-  if (title === 'Tailored cover letter') return 'preview_cover_letter'
-  return 'preview_other'
+  const map: Record<string, string> = {
+    'Full CV improvement report': 'preview_cv_report',
+    'ATS keyword checklist': 'preview_ats_checklist',
+    'Tailored cover letter': 'preview_cover_letter',
+    'PDF export': 'preview_pdf_export',
+  }
+  return map[title] ?? 'preview_other'
 }
 
 function UnlockProReportCta({
@@ -129,6 +137,7 @@ function UnlockProReportCta({
       trackEvent('stripe_checkout_started', { product: 'pro_report', surface: checkoutSurface })
       const res = await fetch('/api/checkout/pro-report', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           analysisId,
@@ -183,7 +192,7 @@ function UnlockProReportCta({
         ? 'Apply demo credit'
         : appliedPromo
           ? `Unlock Pro Report · €${appliedPromo.discountedEur.toFixed(2)}`
-          : UNLOCK_BASE
+          : UNLOCK_PRO_REPORT_CTA_LABEL
 
   return (
     <div className={fullWidth ? 'w-full' : ''}>
@@ -593,7 +602,6 @@ export function AnalysisInsightsPanel({
 
   const lockedCardPreviews = useMemo(() => {
     const strong0 = sections?.strongMatchBullets[0] ?? ''
-    const gap0 = sections?.gapBullets[0] ?? ''
     const impExtra = lockedImprovementExtra
 
     const fullReportLines = [
@@ -618,19 +626,24 @@ export function AnalysisInsightsPanel({
       'Uses your current analysis — instant after unlock.',
     ]
 
-    const redFlagLines = [
-      gap0
-        ? `Example signal: ${truncatePreview(gap0)}`
-        : 'Credibility gaps recruiters scan for (seniority, tools, tenure).',
-      'Honest framing so you fix risks before screening.',
-      'Full list surfaces every flagged bullet from this posting.',
+    const ats0 = sections?.atsBullets[0] ?? ''
+    const ats1 = sections?.atsBullets[1] ?? ''
+
+    const atsLines = [
+      ats0
+        ? `From your posting: ${truncatePreview(ats0)}`
+        : 'Mirror the posting’s terminology with honest evidence in your CV.',
+      ats1
+        ? `Also: ${truncatePreview(ats1)}`
+        : 'Required vs nice-to-have keywords plus where to weave them naturally.',
+      'Full structured checklist (including integrity warnings) unlocks with Pro Report.',
     ]
 
     return [
       { title: 'Full CV improvement report', lines: fullReportLines },
+      { title: 'ATS keyword checklist', lines: atsLines },
       { title: 'Tailored cover letter', lines: coverLines },
-      { title: 'Downloadable PDF report', lines: pdfLines },
-      { title: 'Recruiter red flags', lines: redFlagLines },
+      { title: 'PDF export', lines: pdfLines },
     ]
   }, [sections, lockedImprovementExtra])
 
@@ -812,9 +825,15 @@ export function AnalysisInsightsPanel({
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-violet-100">See everything recruiters scrutinize next</p>
                   <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                    One-time Pro Report for this posting — ATS map, red flags, PDF, cover draft scaffolding. Checkout demo
-                    lives below until Stripe is connected.
+                    One-time Pro Report for this posting — full CV report, ATS checklist, cover letter, and PDF export for
+                    €{PRICE_PRO_REPORT_EUR}.
                   </p>
+                  <Link
+                    href="/pro-report"
+                    className="mt-2 inline-block text-xs font-medium text-violet-400/90 underline-offset-4 hover:text-violet-300 hover:underline"
+                  >
+                    What is Pro Report? →
+                  </Link>
                   <Link
                     href="/pricing"
                     className="mt-2 inline-block text-xs font-medium text-cyan-400/90 underline-offset-4 hover:text-cyan-300 hover:underline"
@@ -1092,56 +1111,32 @@ export function AnalysisInsightsPanel({
               <div>
                 <SectionHeading>Included with Pro Report</SectionHeading>
                 <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                  Preview cards show what unlocks — tap the button on each card when checkout is live; for now use{' '}
-                  <span className="text-slate-400">{UNLOCK_BASE}</span> or the sandbox.
+                  Free analysis is complete — these items stay locked until you unlock. Use{' '}
+                  <span className="text-slate-300">{UNLOCK_PRO_REPORT_CTA_LABEL}</span> (secure Stripe checkout). Optional
+                  sandbox tools are at the bottom of this panel for local testing.
                 </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-1">
                   {lockedCardPreviews.map((card) => (
-                    <div key={card.title}>
-                      <LockedFeaturePreviewCard
-                        title={card.title}
-                        previewLines={card.lines}
-                        onActivate={
-                          showConversionUpsell &&
-                          (card.title === 'Full CV improvement report' || card.title === 'Tailored cover letter')
-                            ? () => bumpUpgradeFromLocked(lockedPreviewCardFeature(card.title))
-                            : undefined
-                        }
-                      />
-                      <div className="mt-3">
-                        <UnlockProReportCta
-                          variant="outline"
-                          fullWidth
-                          analysisId={analysisId}
-                          proReportCreditsCount={proReportCreditsCount}
-                          onApplyProReportCredit={onApplyProReportCredit}
-                          checkoutSurface="insights_preview_card_strip"
-                        />
-                      </div>
-                    </div>
+                    <LockedFeaturePreviewCard
+                      key={card.title}
+                      title={card.title}
+                      previewLines={card.lines}
+                      onActivate={
+                        showConversionUpsell ? () => bumpUpgradeFromLocked(lockedPreviewCardFeature(card.title)) : undefined
+                      }
+                    />
                   ))}
                 </div>
+                <div className="mt-6">
+                  <UnlockProReportCta
+                    analysisId={analysisId}
+                    proReportCreditsCount={proReportCreditsCount}
+                    onApplyProReportCredit={onApplyProReportCredit}
+                    checkoutSurface="insights_locked_cards_cta"
+                    fullWidth
+                  />
+                </div>
 
-                {showConversionUpsell ? (
-                  <div className="mt-6">
-                    <button
-                      type="button"
-                      onClick={() => bumpUpgradeFromLocked('cover_letter_promo')}
-                      className="flex w-full max-w-md flex-col items-start rounded-2xl border border-dashed border-slate-600 bg-slate-950/60 px-5 py-5 text-left outline-none ring-violet-400/20 transition hover:border-violet-400/45 hover:bg-slate-900 focus-visible:ring-2"
-                    >
-                      <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-violet-200/90">
-                        <LockIcon className="text-violet-300/90" />
-                        Cover letter
-                      </span>
-                      <p className="mt-3 text-sm font-medium leading-relaxed text-slate-100">
-                        Unlock a tailored cover letter for this job.
-                      </p>
-                      <p className="mt-2 text-[11px] leading-snug text-slate-500">
-                        Included with Pro Report or Monthly Pro — choose language & tone after unlock.
-                      </p>
-                    </button>
-                  </div>
-                ) : null}
               </div>
 
               <div className="rounded-2xl border border-violet-400/20 bg-violet-500/[0.07] p-5">

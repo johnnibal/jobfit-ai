@@ -97,6 +97,13 @@ export default function Home() {
             >
               Pricing
             </HomeTrackedLink>
+            <HomeTrackedLink
+              href="/pro-report"
+              ctaId="header_pro_report"
+              className="rounded-full border border-violet-400/35 bg-violet-500/10 px-4 py-2 text-violet-100 transition hover:border-violet-400/55 hover:bg-violet-500/15"
+            >
+              Pro Report
+            </HomeTrackedLink>
           </nav>
         </header>
 
@@ -310,6 +317,9 @@ export default function Home() {
           <nav className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-slate-500">
             <HomeTrackedLink href="/analyze" ctaId="footer_analyzer" className="transition hover:text-cyan-400">
               Analyzer
+            </HomeTrackedLink>
+            <HomeTrackedLink href="/pro-report" ctaId="footer_pro_report" className="transition hover:text-cyan-400">
+              Pro Report
             </HomeTrackedLink>
             <HomeTrackedLink href="/pricing" ctaId="footer_pricing" className="transition hover:text-cyan-400">
               Pricing &amp; FAQ

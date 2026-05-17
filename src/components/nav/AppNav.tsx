@@ -56,6 +56,9 @@ export function AppNav({ monthlyProActive, savedReportsLocked, onLockedSavedRepo
       <Link href="/pricing" className="text-slate-400 transition hover:text-slate-200">
         Pricing
       </Link>
+      <Link href="/pro-report" className="text-slate-400 transition hover:text-violet-200">
+        Pro Report
+      </Link>
     </nav>
   )
 }
