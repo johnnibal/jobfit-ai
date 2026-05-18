@@ -18,25 +18,25 @@ export default function ImprintPage() {
       <LegalSection id="provider" heading="Service provider">
         <p className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-amber-100/95">
           {/* TODO(legal): Replace with registered company or sole trader details. */}
-          <strong className="font-semibold">Placeholder — not a real entry.</strong> Add legal name, legal form, and
+          <strong className="font-semibold">Placeholder (not a real entry).</strong> Add legal name, legal form, and
           registration number as required.
         </p>
         <ul className="list-none space-y-2 text-slate-400">
           <li>
-            <span className="text-slate-500">Legal name: </span>[TODO — e.g. Example GmbH]
+            <span className="text-slate-500">Legal name: </span>[TODO: e.g. Example GmbH]
           </li>
           <li>
-            <span className="text-slate-500">Address: </span>[TODO — street, postcode, city, Germany]
+            <span className="text-slate-500">Address: </span>[TODO: street, postcode, city, Germany]
           </li>
           <li>
             <span className="text-slate-500">Email: </span>
-            <a className="text-cyan-300 underline-offset-2 hover:underline" href={`mailto:${SITE_CONTACT_EMAIL}`}>
+            <a className="text-zinc-700 underline-offset-2 hover:underline" href={`mailto:${SITE_CONTACT_EMAIL}`}>
               {SITE_CONTACT_EMAIL}
             </a>{' '}
             (replace)
           </li>
           <li>
-            <span className="text-slate-500">Phone: </span>[TODO — optional if required for your entity type]
+            <span className="text-slate-500">Phone: </span>[TODO: optional if required for your entity type]
           </li>
         </ul>
       </LegalSection>
@@ -44,7 +44,7 @@ export default function ImprintPage() {
       <LegalSection id="representatives" heading="Representatives and registration">
         <p className="text-slate-400">
           {/* TODO(legal): Managing directors (Geschäftsführer), registry court, HRB number, VAT ID, etc. */}
-          [TODO — authorized representatives, commercial register, VAT identification number if applicable.]
+          [TODO: authorized representatives, commercial register, VAT identification number if applicable.]
         </p>
       </LegalSection>
 
@@ -64,12 +64,12 @@ export default function ImprintPage() {
             href="https://ec.europa.eu/consumers/odr"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-cyan-300 underline-offset-2 hover:underline"
+            className="text-zinc-700 underline-offset-2 hover:underline"
           >
             https://ec.europa.eu/consumers/odr
           </a>
-          . We are <strong className="font-semibold text-slate-200">not</strong> obliged and currently{' '}
-          <strong className="font-semibold text-slate-200">not</strong> willing to participate in dispute resolution before
+          . We are <strong className="font-semibold text-zinc-900">not</strong> obliged and currently{' '}
+          <strong className="font-semibold text-zinc-900">not</strong> willing to participate in dispute resolution before
           a consumer arbitration board, unless we state otherwise after legal advice.
           {/* TODO(legal): Update if you join a recognised body (§ 36 VSBG). */}
         </p>

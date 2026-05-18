@@ -95,7 +95,7 @@ export function ProReportPromoBox({ disabled, compact, onApplied }: Props) {
       <div className="flex flex-wrap items-end gap-2">
         <label className={`flex-1 ${compact ? 'min-w-[120px]' : 'min-w-[160px]'}`}>
           <span
-            className={`mb-1 block ${compact ? 'text-[10px]' : 'text-[11px]'} font-semibold uppercase tracking-wider text-slate-400`}
+            className={`mb-1 block ${compact ? 'text-[10px]' : 'text-[11px]'} font-medium uppercase tracking-wide text-zinc-500`}
           >
             Promo / referral code
           </span>
@@ -113,7 +113,7 @@ export function ProReportPromoBox({ disabled, compact, onApplied }: Props) {
               }
             }}
             placeholder="LAUNCH50"
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-600 focus:border-violet-400/45 disabled:opacity-45"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
@@ -123,7 +123,7 @@ export function ProReportPromoBox({ disabled, compact, onApplied }: Props) {
           type="button"
           disabled={disabled || busy}
           onClick={() => void apply()}
-          className="rounded-xl border border-violet-400/35 bg-violet-500/10 px-4 py-2 text-xs font-semibold text-violet-100 transition hover:bg-violet-500/15 disabled:opacity-45"
+          className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-xs font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:opacity-50"
         >
           {busy ? 'Checking…' : 'Apply'}
         </button>
@@ -132,14 +132,14 @@ export function ProReportPromoBox({ disabled, compact, onApplied }: Props) {
             type="button"
             disabled={disabled || busy}
             onClick={clearAll}
-            className="rounded-xl border border-slate-600 px-3 py-2 text-xs font-medium text-slate-400 hover:border-slate-500 hover:text-slate-200"
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
           >
             Clear
           </button>
         ) : null}
       </div>
-      {appliedTag ? <p className="text-[11px] font-medium text-emerald-200/90">{appliedTag} applied</p> : null}
-      {msg ? <p className="text-[11px] leading-relaxed text-amber-200/95">{msg}</p> : null}
+      {appliedTag ? <p className="text-[11px] font-medium text-emerald-700">{appliedTag} applied</p> : null}
+      {msg ? <p className="text-[11px] leading-relaxed text-amber-800">{msg}</p> : null}
     </div>
   )
 }

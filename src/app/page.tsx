@@ -1,58 +1,32 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import AnimatedHeroLogo from '@/components/AnimatedHeroLogo'
 import { HomeTrackedLink } from '@/components/analytics/HomeTrackedLink'
-import { TestimonialsSection } from '@/components/marketing/TestimonialsSection'
+import { MonthlyProCheckoutButton, ProReportCheckoutButton } from '@/components/billing/PlanStripeCheckoutButtons'
 import {
-  COPY_FREE_TIER_PRIMARY_LINE,
-  COPY_MONTHLY_PRO_INCLUDES_LONG,
-  COPY_MONTHLY_PRO_TAGLINE,
-  COPY_PRO_REPORT_INCLUDES,
-  COPY_PRO_REPORT_ONELINE,
-  LABEL_SUBSCRIBE_MONTHLY_PRO,
+  MONTHLY_PRO_ANALYSES_PER_MONTH,
   PRICE_MONTHLY_PRO_EUR,
   PRICE_PRO_REPORT_EUR,
 } from '@/lib/planTypes'
-import { MarketingProReportPricingButton } from '@/components/billing/MarketingProReportPricingButton'
-import { MonthlyProCheckoutButton } from '@/components/billing/PlanStripeCheckoutButtons'
+import {
+  btnPrimary,
+  btnSecondary,
+  btnSecondaryFull,
+  card,
+  cardPadding,
+  pageMain,
+  sectionHeading,
+} from '@/components/ui/theme'
 
 export const metadata: Metadata = {
-  title: 'JobFit AI — CV fit scoring for Germany',
+  title: 'JobFit AI: CV fit scoring for Germany',
   description:
-    'Compare your CV to any job posting. Fit score, missing skills, ATS keywords, cover letter — built for applicants in Germany.',
+    'Compare your CV to any job posting. Fit score, missing skills, ATS keywords, cover letter. Built for applicants in Germany.',
 }
 
-function SectionShell({
-  children,
-  className = '',
-  dark = false,
-}: {
-  children: ReactNode
-  className?: string
-  dark?: boolean
-}) {
+function CheckIcon() {
   return (
-    <div
-      className={`rounded-[28px] border backdrop-blur-xl ${
-        dark
-          ? 'border-slate-800 bg-slate-900/70'
-          : 'border-slate-800/80 bg-slate-950/40'
-      } p-8 sm:p-10 ${className}`}
-    >
-      {children}
-    </div>
-  )
-}
-
-function CheckIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      className={`mt-0.5 h-5 w-5 shrink-0 text-cyan-400 ${className}`}
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      aria-hidden
-    >
+    <svg className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
       <path
         fillRule="evenodd"
         d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
@@ -62,275 +36,222 @@ function CheckIcon({ className = '' }: { className?: string }) {
   )
 }
 
-function Bullet({ children, className }: { children: React.ReactNode; className?: string }) {
+function Bullet({ children }: { children: ReactNode }) {
   return (
-    <li className={`flex gap-3 text-sm leading-relaxed text-slate-300 ${className ?? ''}`}>
+    <li className="flex gap-2.5 text-sm leading-relaxed text-zinc-700">
       <CheckIcon />
       <span>{children}</span>
     </li>
   )
 }
 
+const planCard = `flex flex-col ${card} ${cardPadding}`
+
 export default function Home() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(167,139,250,0.18),_transparent_30%)]" />
-      <div className="absolute left-10 top-16 h-32 w-32 rounded-full bg-cyan-400/10 blur-3xl" />
-      <div className="absolute bottom-12 right-12 h-40 w-40 rounded-full bg-violet-400/10 blur-3xl" />
-
-      <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-8 sm:px-6 lg:px-8 lg:pb-28 lg:pt-10">
-        {/* Desktop: first screen = header + hero only; “Most CVs…” and below appear after scroll */}
-        <div className="lg:flex lg:min-h-[100dvh] lg:flex-col">
-        <header className="mb-12 flex shrink-0 flex-col gap-6 sm:flex-row sm:items-center sm:justify-between lg:mb-0">
+    <main className={pageMain}>
+      <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:pb-24 lg:pt-10">
+        <header className="mb-16 flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-6">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-white transition hover:text-cyan-200"
+            className="text-sm font-semibold tracking-tight text-zinc-900 transition hover:text-zinc-600"
           >
-            <span className="h-2 w-2 rounded-full bg-cyan-400" aria-hidden />
             JobFit AI
           </Link>
-          <nav className="flex flex-wrap gap-3 text-sm font-medium" aria-label="Primary">
-            <HomeTrackedLink
-              href="/analyze"
-              ctaId="header_analyze"
-              className="rounded-full border border-cyan-400/35 bg-cyan-500/10 px-4 py-2 text-cyan-100 transition hover:border-cyan-400/55 hover:bg-cyan-500/15"
-            >
+          <nav className="flex flex-wrap gap-2 text-sm font-medium" aria-label="Primary">
+            <HomeTrackedLink href="/analyze" ctaId="header_analyze" className={btnSecondary}>
               Analyze
             </HomeTrackedLink>
-            <HomeTrackedLink
-              href="/pricing"
-              ctaId="header_pricing"
-              className="rounded-full border border-slate-700 bg-slate-900/70 px-4 py-2 text-slate-200 backdrop-blur transition hover:border-violet-400/35 hover:text-white"
-            >
+            <HomeTrackedLink href="/pricing" ctaId="header_pricing" className={btnSecondary}>
               Pricing
-            </HomeTrackedLink>
-            <HomeTrackedLink
-              href="/pro-report"
-              ctaId="header_pro_report"
-              className="rounded-full border border-violet-400/35 bg-violet-500/10 px-4 py-2 text-violet-100 transition hover:border-violet-400/55 hover:bg-violet-500/15"
-            >
-              Pro Report
             </HomeTrackedLink>
           </nav>
         </header>
 
-        {/* 1 · Hero — mobile: illustration then short copy + CTAs (no pill/H1); desktop: full headline + text | illustration */}
-        <section className="flex flex-col lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:flex-1 lg:items-center lg:gap-12 lg:pb-10 lg:pt-8">
-          <div className="order-2 mx-auto flex max-w-2xl flex-col text-center lg:order-1 lg:mx-0 lg:max-w-none lg:text-left">
-            <div className="mb-6 hidden items-center gap-2 self-center rounded-full border border-cyan-400/25 bg-slate-900/70 px-4 py-2 text-sm text-cyan-200 shadow-[0_0_30px_rgba(34,211,238,0.08)] backdrop-blur lg:inline-flex lg:self-start">
-              <span className="h-2 w-2 rounded-full bg-cyan-400" />
-              Focused on the German job market
-            </div>
-
-            <h1 className="hidden text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:block lg:max-w-2xl lg:text-[3.35rem]">
-              Know if your CV fits the job before you apply.
-            </h1>
-
-            <p className="mt-0 text-lg leading-relaxed text-slate-300 lg:mt-6 lg:max-w-2xl">
-              JobFit AI compares your CV with a job posting, gives you a fit score, finds missing skills, and helps you
-              improve your application for the German job market.
-            </p>
-
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-              <HomeTrackedLink
-                href="/analyze"
-                ctaId="hero_primary_analyze"
-                className="inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-violet-500 px-8 py-3.5 text-center font-semibold text-slate-950 shadow-[0_0_28px_rgba(56,189,248,0.35)] transition hover:scale-[1.02] hover:shadow-[0_0_36px_rgba(56,189,248,0.45)] sm:w-auto"
-              >
-                Analyze My CV
-              </HomeTrackedLink>
-              <HomeTrackedLink
-                href="#pricing-preview"
-                ctaId="hero_secondary_pricing_anchor"
-                className="inline-flex w-full items-center justify-center rounded-full border border-slate-600 bg-slate-900/80 px-8 py-3.5 text-center font-semibold text-slate-100 backdrop-blur transition hover:border-slate-500 hover:bg-slate-800/90 sm:w-auto"
-              >
-                See Pricing
-              </HomeTrackedLink>
-            </div>
-
-            <p className="mt-6 max-w-xl self-center text-xs leading-relaxed text-slate-500 lg:self-start">
-              No card needed to start on the free tier · Upgrade when you want full suggestions, ATS detail, exports, or
-              a monthly allowance.
-            </p>
+        {/* Hero */}
+        <section className="mx-auto max-w-3xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
+            Know if your CV fits the job before you apply
+          </h1>
+          <p className="mt-4 text-base leading-relaxed text-zinc-600 sm:text-lg">
+            JobFit AI compares your CV with a job posting, gives you a fit score, finds missing gaps, and helps you
+            improve your application.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <HomeTrackedLink href="/analyze" ctaId="hero_primary_analyze" className={btnPrimary}>
+              Analyze My CV
+            </HomeTrackedLink>
+            <HomeTrackedLink href="/pricing" ctaId="hero_secondary_pricing" className={btnSecondary}>
+              View Pricing
+            </HomeTrackedLink>
           </div>
-
-          <div className="order-1 mb-8 flex justify-center max-lg:w-full lg:order-2 lg:mb-0 lg:mt-0 lg:justify-end">
-            <div className="rounded-[32px] border border-slate-800 bg-slate-900/60 p-4 shadow-[0_0_60px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:p-6">
-              <AnimatedHeroLogo />
-            </div>
-          </div>
-        </section>
-        </div>
-
-        {/* 2 · Problem */}
-        <section className="mt-20 lg:mt-16" aria-labelledby="problem-heading">
-          <SectionShell>
-            <h2 id="problem-heading" className="max-w-3xl text-2xl font-semibold leading-snug tracking-tight text-white sm:text-3xl lg:text-[1.75rem]">
-              Most CVs are not rejected because they are bad. They are rejected because they do not match the job.
-            </h2>
-            <p className="mt-5 max-w-2xl text-sm leading-relaxed text-slate-400">
-              Recruiters and ATS systems prioritize overlap with what the posting actually asks for. JobFit AI makes that
-              overlap visible fast — so you can adapt before you send the application.
-            </p>
-          </SectionShell>
+          <p className="mt-6 text-sm text-zinc-500">
+            Free tier available. No card required to try the analyzer.
+          </p>
         </section>
 
-        {/* 3 · Benefits */}
-        <section className="mt-16 lg:mt-20" aria-labelledby="benefits-heading">
-          <div className="mb-10 text-center lg:text-left">
-            <h2 id="benefits-heading" className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              What you get
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-400 lg:mx-0">
-              Practical outputs you can edit and reuse for every posting.
-            </p>
-          </div>
-          <SectionShell dark>
-            <ul className="grid gap-4 sm:grid-cols-2 lg:gap-5">
-              <Bullet>Find missing skills</Bullet>
-              <Bullet>Improve your CV for each job</Bullet>
-              <Bullet>Get ATS-friendly keywords</Bullet>
-              <Bullet>Generate a tailored cover letter</Bullet>
-              <Bullet>Export a professional report</Bullet>
-            </ul>
-          </SectionShell>
-        </section>
-
-        {/* 4 · Trust */}
-        <section className="mt-16 lg:mt-20" aria-labelledby="trust-heading">
-          <div className="mb-10 text-center lg:text-left">
-            <h2 id="trust-heading" className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              Why applicants trust JobFit AI
-            </h2>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+        {/* How it works */}
+        <section className="mt-20 lg:mt-24" aria-labelledby="how-heading">
+          <h2 id="how-heading" className={sectionHeading}>
+            How it works
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-zinc-600">
+            Three steps from paste to actionable feedback.
+          </p>
+          <ol className="mt-8 grid gap-4 sm:grid-cols-3">
             {[
-              'Built for job seekers in Germany',
-              'Supports English and German applications',
-              'AI-generated suggestions you can edit',
-              'Secure payment with Stripe',
-            ].map((line) => (
-              <SectionShell key={line} dark className="p-6 sm:p-7">
-                <div className="flex gap-3">
-                  <CheckIcon />
-                  <p className="text-sm font-medium leading-relaxed text-slate-100">{line}</p>
-                </div>
-              </SectionShell>
+              {
+                step: '1',
+                title: 'Add your materials',
+                body: 'Paste your CV text and the full job description. You can upload a PDF to fill the CV field.',
+              },
+              {
+                step: '2',
+                title: 'Run the analysis',
+                body: 'JobFit AI compares overlap between your CV and the posting and scores the fit.',
+              },
+              {
+                step: '3',
+                title: 'Act on the report',
+                body: 'Review gaps, suggestions, and ATS keywords. Upgrade for the full checklist, cover letter, and PDF.',
+              },
+            ].map((item) => (
+              <li key={item.step} className={`${card} p-5 sm:p-6`}>
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-700">
+                  {item.step}
+                </span>
+                <h3 className="mt-4 text-sm font-semibold text-zinc-900">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-600">{item.body}</p>
+              </li>
             ))}
+          </ol>
+        </section>
+
+        {/* What you get */}
+        <section className="mt-20 lg:mt-24" aria-labelledby="benefits-heading">
+          <h2 id="benefits-heading" className={sectionHeading}>
+            What you get
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-zinc-600">
+            Outputs you can edit and reuse for each application.
+          </p>
+          <div className={`mt-8 ${card} ${cardPadding}`}>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              <Bullet>Fit score for the role</Bullet>
+              <Bullet>CV improvement suggestions</Bullet>
+              <Bullet>ATS keyword checklist</Bullet>
+              <Bullet>Tailored cover letter draft</Bullet>
+              <Bullet>PDF report export</Bullet>
+              <Bullet>Saved reports on Monthly Pro</Bullet>
+            </ul>
           </div>
         </section>
 
-        <TestimonialsSection idPrefix="home" />
-
-        {/* 5 · Pricing preview */}
-        <section id="pricing-preview" className="mt-20 lg:mt-28 scroll-mt-24" aria-labelledby="pricing-preview-heading">
-          <div className="mb-10 text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-slate-900/70 px-4 py-2 text-sm text-cyan-200 shadow-[0_0_30px_rgba(34,211,238,0.08)] backdrop-blur">
-              <span className="h-2 w-2 rounded-full bg-cyan-400" />
-              Simple pricing
-            </div>
-            <h2 id="pricing-preview-heading" className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              Pick what fits how you apply
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-400">
-              Start free anytime. Detailed comparison and FAQs on the{' '}
-              <HomeTrackedLink
-                href="/pricing"
-                ctaId="pricing_section_compare_link"
-                className="text-cyan-300 underline-offset-4 hover:text-cyan-200 hover:underline"
-              >
-                pricing page
-              </HomeTrackedLink>
-              .
-            </p>
+        {/* Germany */}
+        <section className="mt-20 lg:mt-24" aria-labelledby="germany-heading">
+          <h2 id="germany-heading" className={sectionHeading}>
+            Built for job seekers in Germany
+          </h2>
+          <div className={`mt-8 ${card} ${cardPadding}`}>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              <Bullet>German and English CV and job text supported</Bullet>
+              <Bullet>Highlights terms German postings often emphasize</Bullet>
+              <Bullet>Honest suggestions based on your CV, not invented claims</Bullet>
+              <Bullet>Secure checkout through Stripe when you upgrade</Bullet>
+            </ul>
           </div>
+        </section>
 
-          <div className="grid gap-6 lg:grid-cols-3 lg:items-stretch">
-            <article className="flex flex-col rounded-[28px] border border-slate-800 bg-slate-900/70 p-8 shadow-[0_0_60px_rgba(15,23,42,0.65)] backdrop-blur-xl">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-slate-100">Free</h3>
-                <p className="mt-3 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold tabular-nums text-white">€0</span>
-                </p>
-                <p className="mt-2 text-sm text-slate-500">Try the analyzer — essentials first</p>
-              </div>
-              <ul className="flex flex-1 flex-col gap-3 text-sm">
-                <Bullet>{COPY_FREE_TIER_PRIMARY_LINE}</Bullet>
-                <Bullet>Fit score & short summary preview</Bullet>
-                <Bullet>No card required</Bullet>
+        {/* Pricing preview */}
+        <section id="pricing-preview" className="mt-20 scroll-mt-24 lg:mt-24" aria-labelledby="pricing-heading">
+          <h2 id="pricing-heading" className={sectionHeading}>
+            Pricing preview
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-zinc-600">
+            Start free. Full details on the{' '}
+            <HomeTrackedLink
+              href="/pricing"
+              ctaId="pricing_section_compare_link"
+              className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+            >
+              pricing page
+            </HomeTrackedLink>
+            .
+          </p>
+
+          <div className="mt-8 grid gap-5 lg:grid-cols-3 lg:items-stretch">
+            <article className={planCard}>
+              <h3 className="text-base font-semibold text-zinc-900">Free</h3>
+              <p className="mt-2 text-3xl font-semibold tabular-nums text-zinc-900">€0</p>
+              <ul className="mt-5 flex flex-1 flex-col gap-2.5">
+                <Bullet>1 free analysis per day</Bullet>
+                <Bullet>Basic score and preview</Bullet>
               </ul>
-              <HomeTrackedLink
-                href="/analyze"
-                ctaId="pricing_preview_free"
-                className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-slate-600 bg-slate-950/80 px-6 py-3 text-center text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900"
-              >
+              <HomeTrackedLink href="/analyze" ctaId="pricing_preview_free" className={`mt-6 ${btnSecondaryFull}`}>
                 Start free
               </HomeTrackedLink>
             </article>
 
-            <article className="relative flex flex-col rounded-[28px] border-2 border-violet-400/45 bg-gradient-to-b from-violet-950/50 via-slate-900/90 to-slate-900/70 p-8 shadow-[0_0_80px_rgba(139,92,246,0.22),0_0_60px_rgba(34,211,238,0.08)] backdrop-blur-xl lg:z-10 lg:-mt-2 lg:mb-[-0.5rem] lg:scale-[1.02]">
-              <div className="absolute -top-3 left-1/2 flex -translate-x-1/2 justify-center">
-                <span className="rounded-full border border-violet-400/40 bg-gradient-to-r from-violet-500/90 to-cyan-500/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white shadow-lg">
-                  Popular
-                </span>
-              </div>
-              <div className="mb-6 mt-3">
-                <h3 className="text-lg font-semibold text-white">Pro Report</h3>
-                <p className="mt-3 flex flex-wrap items-baseline gap-2">
-                  <span className="text-4xl font-bold tabular-nums text-white">€{PRICE_PRO_REPORT_EUR}</span>
-                  <span className="text-sm font-medium text-violet-200/90">one-time</span>
-                </p>
-                <p className="mt-2 text-sm text-violet-200/70">{COPY_PRO_REPORT_ONELINE}</p>
-              </div>
-              <ul className="flex flex-1 flex-col gap-3 text-sm">
-                <Bullet>{COPY_PRO_REPORT_INCLUDES}</Bullet>
+            <article className={`${planCard} relative border-zinc-400`}>
+              <span className="absolute -top-2.5 left-4 rounded-md border border-zinc-300 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
+                Recommended
+              </span>
+              <h3 className="pt-1 text-base font-semibold text-zinc-900">Pro Report</h3>
+              <p className="mt-2 flex items-baseline gap-2">
+                <span className="text-3xl font-semibold tabular-nums text-zinc-900">€{PRICE_PRO_REPORT_EUR}</span>
+                <span className="text-sm text-zinc-500">one-time</span>
+              </p>
+              <ul className="mt-5 flex flex-1 flex-col gap-2.5">
+                <Bullet>One paid analysis</Bullet>
+                <Bullet>Full report, ATS checklist, cover letter</Bullet>
+                <Bullet>PDF export</Bullet>
               </ul>
-              <MarketingProReportPricingButton />
+              <div className="mt-6">
+                <ProReportCheckoutButton analyticsSurface="homepage_pricing_preview_pro_report">
+                  Buy Pro Report
+                </ProReportCheckoutButton>
+              </div>
             </article>
 
-            <article className="flex flex-col rounded-[28px] border border-slate-800 bg-slate-900/70 p-8 shadow-[0_0_60px_rgba(15,23,42,0.65)] backdrop-blur-xl">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-slate-100">Monthly Pro</h3>
-                <p className="mt-3 flex flex-wrap items-baseline gap-2">
-                  <span className="text-4xl font-bold tabular-nums text-white">€{PRICE_MONTHLY_PRO_EUR}</span>
-                  <span className="text-sm font-medium text-slate-400">/month</span>
-                </p>
-                <p className="mt-2 text-sm text-slate-500">{COPY_MONTHLY_PRO_TAGLINE}</p>
-              </div>
-              <ul className="flex flex-1 flex-col gap-3 text-sm">
-                <Bullet>{COPY_MONTHLY_PRO_INCLUDES_LONG}</Bullet>
+            <article className={planCard}>
+              <h3 className="text-base font-semibold text-zinc-900">Monthly Pro</h3>
+              <p className="mt-2 flex items-baseline gap-2">
+                <span className="text-3xl font-semibold tabular-nums text-zinc-900">€{PRICE_MONTHLY_PRO_EUR}</span>
+                <span className="text-sm text-zinc-500">/month</span>
+              </p>
+              <ul className="mt-5 flex flex-1 flex-col gap-2.5">
+                <Bullet>{MONTHLY_PRO_ANALYSES_PER_MONTH} analyses per month</Bullet>
+                <Bullet>Saved reports and full premium features</Bullet>
+                <Bullet>Best for active job seekers</Bullet>
               </ul>
-              <div className="mt-8 w-full">
+              <div className="mt-6">
                 <MonthlyProCheckoutButton analyticsSurface="homepage_pricing_preview_monthly_pro">
-                  {LABEL_SUBSCRIBE_MONTHLY_PRO}
+                  Subscribe Monthly Pro
                 </MonthlyProCheckoutButton>
               </div>
             </article>
           </div>
         </section>
 
-        <footer className="mt-20 border-t border-slate-800 pt-10 text-center text-xs text-slate-600 lg:mt-24">
-          <p>© JobFit AI — CV and role fit tooling for applicants in Germany.</p>
-          <nav className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-slate-500">
-            <HomeTrackedLink href="/analyze" ctaId="footer_analyzer" className="transition hover:text-cyan-400">
+        <footer className="mt-20 border-t border-zinc-200 pt-8 text-center text-xs text-zinc-500">
+          <p>JobFit AI. CV and role fit tooling for applicants in Germany.</p>
+          <nav className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-zinc-600">
+            <HomeTrackedLink href="/analyze" ctaId="footer_analyzer" className="hover:text-zinc-900">
               Analyzer
             </HomeTrackedLink>
-            <HomeTrackedLink href="/pro-report" ctaId="footer_pro_report" className="transition hover:text-cyan-400">
-              Pro Report
+            <HomeTrackedLink href="/pricing" ctaId="footer_pricing" className="hover:text-zinc-900">
+              Pricing
             </HomeTrackedLink>
-            <HomeTrackedLink href="/pricing" ctaId="footer_pricing" className="transition hover:text-cyan-400">
-              Pricing &amp; FAQ
-            </HomeTrackedLink>
-            <Link href="/privacy" className="transition hover:text-cyan-400">
+            <Link href="/privacy" className="hover:text-zinc-900">
               Privacy
             </Link>
-            <Link href="/terms" className="transition hover:text-cyan-400">
+            <Link href="/terms" className="hover:text-zinc-900">
               Terms
             </Link>
-            <Link href="/refund-policy" className="transition hover:text-cyan-400">
+            <Link href="/refund-policy" className="hover:text-zinc-900">
               Refunds
             </Link>
-            <Link href="/imprint" className="transition hover:text-cyan-400">
+            <Link href="/imprint" className="hover:text-zinc-900">
               Imprint
             </Link>
           </nav>

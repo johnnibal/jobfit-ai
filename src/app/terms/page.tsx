@@ -6,7 +6,7 @@ import { SITE_CONTACT_EMAIL } from '@/lib/legal/placeholders'
 export const metadata: Metadata = {
   title: 'Terms of use · JobFit AI',
   description:
-    'Terms for using JobFit AI, including AI limitations, payments, and cancellations. Draft for review — not legal advice.',
+    'Terms for using JobFit AI, including AI limitations, payments, and cancellations. Draft for review, not legal advice.',
 }
 
 export default function TermsPage() {
@@ -24,14 +24,14 @@ export default function TermsPage() {
 
       <LegalSection id="not-advice" heading="Not career, legal, or tax advice">
         <p>
-          Output is <strong className="font-semibold text-slate-200">informational</strong> and may be wrong or incomplete.
+          Output is <strong className="font-semibold text-zinc-900">informational</strong> and may be wrong or incomplete.
           It is not professional career, legal, immigration, or tax advice. For those topics, consult a qualified person.
         </p>
       </LegalSection>
 
-      <LegalSection id="ai-outcomes" heading="AI guidance — no guaranteed results">
+      <LegalSection id="ai-outcomes" heading="AI guidance: no guaranteed results">
         <p>
-          Suggestions and scores are generated automatically. They do <strong className="font-semibold text-slate-200">
+          Suggestions and scores are generated automatically. They do <strong className="font-semibold text-zinc-900">
             not
           </strong>{' '}
           guarantee that you will pass screening, get an interview, or receive a job offer. Market conditions, employer
@@ -48,7 +48,7 @@ export default function TermsPage() {
 
       <LegalSection id="pro-report" heading="Pro Report (one-time payment)">
         <p>
-          Pro Report is a <strong className="font-semibold text-slate-200">one-time</strong> purchase for deeper analysis
+          Pro Report is a <strong className="font-semibold text-zinc-900">one-time</strong> purchase for deeper analysis
           and related features for a specific analysis run, billed through Stripe at the price shown at checkout. Access is
           tied to the purchase and our technical rules (for example analysis id and Stripe records).
           {/* TODO(legal): Describe exact deliverables, territorial tax, and VAT/sales tax handling with Stripe. */}
@@ -61,11 +61,11 @@ export default function TermsPage() {
 
       <LegalSection id="monthly-pro" heading="Monthly Pro (subscription)">
         <p>
-          Monthly Pro is a <strong className="font-semibold text-slate-200">recurring subscription</strong> billed via
+          Monthly Pro is a <strong className="font-semibold text-zinc-900">recurring subscription</strong> billed via
           Stripe until cancelled. Your plan page and Stripe receipt state the billing interval and price.
         </p>
         <p>
-          You may <strong className="font-semibold text-slate-200">cancel</strong> before the next renewal using the
+          You may <strong className="font-semibold text-zinc-900">cancel</strong> before the next renewal using the
           customer portal or cancellation path we provide (often linked from the app or email from Stripe). Cancelling
           stops future charges; it does not automatically refund past billing periods unless required by law or our refund
           policy.
@@ -100,7 +100,7 @@ export default function TermsPage() {
 
       <LegalSection id="contact-terms" heading="Contact">
         <p>
-          <a className="text-cyan-300 underline-offset-2 hover:underline" href={`mailto:${SITE_CONTACT_EMAIL}`}>
+          <a className="text-zinc-700 underline-offset-2 hover:underline" href={`mailto:${SITE_CONTACT_EMAIL}`}>
             {SITE_CONTACT_EMAIL}
           </a>
         </p>

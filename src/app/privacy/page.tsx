@@ -6,7 +6,7 @@ import { SITE_CONTACT_EMAIL } from '@/lib/legal/placeholders'
 export const metadata: Metadata = {
   title: 'Privacy · JobFit AI',
   description:
-    'How JobFit AI handles your CV, job text, and billing data. Plain-language summary — not a certified legal document.',
+    'How JobFit AI handles your CV, job text, and billing data. Plain-language summary, not a certified legal document.',
 }
 
 export default function PrivacyPage() {
@@ -26,12 +26,12 @@ export default function PrivacyPage() {
         <p>
           To run a match analysis, you paste or upload text (for example CV content and a job posting). That content is sent
           to our systems to generate scores and suggestions. We do{' '}
-          <strong className="font-semibold text-slate-200">not</strong> use this text to train public or shared machine
+          <strong className="font-semibold text-zinc-900">not</strong> use this text to train public or shared machine
           learning models for third parties unless we tell you otherwise in a separate, clear notice.
           {/* TODO(legal): Confirm retention period, logs, subprocessors, and any model-training policy with engineering. */}
         </p>
         <p>
-          <strong className="font-semibold text-slate-200">Do not</strong> paste information you are not allowed to share
+          <strong className="font-semibold text-zinc-900">Do not</strong> paste information you are not allowed to share
           (for example highly sensitive personal data of others, or employer-confidential material) unless you have
           permission.
         </p>
@@ -40,19 +40,19 @@ export default function PrivacyPage() {
       <LegalSection id="ai" heading="AI-generated output">
         <p>
           Scores, checklists, cover-letter drafts, and other outputs are generated automatically. They may be incomplete,
-          outdated, or unsuitable for your situation. They are <strong className="font-semibold text-slate-200">guidance
-          only</strong> and do <strong className="font-semibold text-slate-200">not</strong> guarantee interviews, offers,
+          outdated, or unsuitable for your situation. They are <strong className="font-semibold text-zinc-900">guidance
+          only</strong> and do <strong className="font-semibold text-zinc-900">not</strong> guarantee interviews, offers,
           or any job outcome.
         </p>
         <p>
-          You should <strong className="font-semibold text-slate-200">review every CV, letter, and suggestion</strong>{' '}
+          You should <strong className="font-semibold text-zinc-900">review every CV, letter, and suggestion</strong>{' '}
           before you send it to an employer or recruiter. You remain responsible for what you submit.
         </p>
       </LegalSection>
 
       <LegalSection id="billing" heading="Payments and account identifiers">
         <p>
-          Paid features are handled by <strong className="font-semibold text-slate-200">Stripe</strong>. We may store
+          Paid features are handled by <strong className="font-semibold text-zinc-900">Stripe</strong>. We may store
           identifiers such as Stripe customer or session ids linked to your browser or account flow to provide access to
           purchased reports and subscriptions.
           {/* TODO(legal): List Stripe data categories and link to Stripe privacy policy as required. */}
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
       <LegalSection id="contact" heading="Contact">
         <p>
           Privacy-related requests:{' '}
-          <a className="text-cyan-300 underline-offset-2 hover:underline" href={`mailto:${SITE_CONTACT_EMAIL}`}>
+          <a className="text-zinc-700 underline-offset-2 hover:underline" href={`mailto:${SITE_CONTACT_EMAIL}`}>
             {SITE_CONTACT_EMAIL}
           </a>
           . {/* TODO(legal): Add DPO or EU representative if mandatory. */}

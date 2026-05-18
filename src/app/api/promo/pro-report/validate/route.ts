@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     promo.reason === 'expired'
       ? 'This code has expired.'
       : promo.reason === 'not_configured'
-        ? 'This promotion is not available yet — check back soon.'
+        ? 'This promotion is not available yet. Check back soon.'
         : 'Unknown or invalid code.'
 
   return NextResponse.json({

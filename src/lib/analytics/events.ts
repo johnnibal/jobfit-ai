@@ -20,6 +20,7 @@ export type HomepageCtaId =
   | 'header_pricing'
   | 'header_pro_report'
   | 'hero_primary_analyze'
+  | 'hero_secondary_pricing'
   | 'hero_secondary_pricing_anchor'
   | 'final_primary_analyze'
   | 'final_secondary_pricing_page'

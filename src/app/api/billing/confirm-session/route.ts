@@ -57,7 +57,7 @@ export async function GET(req: Request) {
       return NextResponse.json(
         {
           error:
-            'Stripe still marks this checkout as unpaid. If you were just redirected from payment, wait a few seconds—we will retry from this screen. Otherwise open the Stripe receipt link again.',
+            'Stripe still marks this checkout as unpaid. If you were just redirected from payment, wait a few seconds. We will retry from this screen. Otherwise open the Stripe receipt link again.',
           code: 'STRIPE_PAYMENT_PENDING' as const,
         },
         { status: 409 }
@@ -88,7 +88,7 @@ export async function GET(req: Request) {
         const res403 = NextResponse.json(
           {
             error:
-              'Your signed JobFit browser session cookie was missing after Stripe redirected back — usually SameSite cookies blocked, a different domain than NEXT_PUBLIC_APP_URL, or clearing site data mid-checkout. Use the exact staging URL configured in Railway, reload /analyze once, retry “Verify again,” or reopen the Stripe receipt link.',
+              'Your signed JobFit browser session cookie was missing after Stripe redirected back. This is usually caused by SameSite cookies blocked, a different domain than NEXT_PUBLIC_APP_URL, or clearing site data mid-checkout. Use the exact staging URL configured in Railway, reload /analyze once, retry “Verify again,” or reopen the Stripe receipt link.',
             code: 'JOBFIT_ANON_COOKIE_MISSING' as const,
             ...(exposing ? { debugReason: 'verified_jobfit_anon_cookie_missing_on_confirm' } : {}),
           },
@@ -116,7 +116,7 @@ export async function GET(req: Request) {
           logDetail: bound.logDetail,
         })
         const genericUserMessage =
-          'This Pro Report credit could not finish activation on this browser. Confirm you returned in the same profile that started Checkout, blocked third-party scripts are not interfering, then try verifying again—or contact support with your Stripe receipt URL.'
+          'This Pro Report credit could not finish activation on this browser. Confirm you returned in the same profile that started Checkout, blocked third-party scripts are not interfering, then try verifying again, or contact support with your Stripe receipt URL.'
         return NextResponse.json(
           {
             error: genericUserMessage,

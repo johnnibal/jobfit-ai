@@ -7,12 +7,14 @@ export const metadata: Metadata = {
   description: 'Your JobFit AI Pro Report checkout completed.',
 }
 
+import { card, cardPadding, pageMain } from '@/components/ui/theme'
+
 function SuccessFallback() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
+    <main className={pageMain}>
       <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-4">
-        <div className="rounded-[28px] border border-slate-800 bg-slate-900/80 p-8">
-          <p className="text-sm text-slate-400">Loading…</p>
+        <div className={`${card} ${cardPadding}`}>
+          <p className="text-sm text-zinc-500">Loading…</p>
         </div>
       </div>
     </main>

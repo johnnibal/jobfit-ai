@@ -2,28 +2,23 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { TestimonialsSection } from '@/components/marketing/TestimonialsSection'
+import { MonthlyProCheckoutButton, ProReportCheckoutButton } from '@/components/billing/PlanStripeCheckoutButtons'
 import {
-  COPY_FREE_TIER_PRIMARY_LINE,
-  COPY_MONTHLY_PRO_INCLUDES_LONG,
-  COPY_MONTHLY_PRO_TAGLINE,
-  COPY_PRO_REPORT_INCLUDES,
-  COPY_PRO_REPORT_ONELINE,
-  LABEL_BUY_PRO_REPORT,
-  LABEL_SUBSCRIBE_MONTHLY_PRO,
+  MONTHLY_PRO_ANALYSES_PER_MONTH,
   PRICE_MONTHLY_PRO_EUR,
   PRICE_PRO_REPORT_EUR,
 } from '@/lib/planTypes'
-import { MonthlyProCheckoutButton, ProReportCheckoutButton } from '@/components/billing/PlanStripeCheckoutButtons'
+import { btnPrimary, btnSecondary } from '@/components/ui/theme'
 
 export const metadata: Metadata = {
-  title: 'Pricing — JobFit AI',
-  description: 'Simple pricing for CV and job fit analysis. Free tier, Pro Report, and Monthly Pro.',
+  title: 'Pricing · JobFit AI',
+  description: 'Free CV fit analysis, Pro Report at €4.99, or Monthly Pro at €9.99/month. Pay through Stripe when you upgrade.',
 }
 
 function CheckIcon() {
   return (
     <svg
-      className="mt-0.5 h-5 w-5 shrink-0 text-cyan-400 lg:h-4 lg:w-4"
+      className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500"
       viewBox="0 0 20 20"
       fill="currentColor"
       aria-hidden
@@ -39,220 +34,179 @@ function CheckIcon() {
 
 function FeatureItem({ children }: { children: ReactNode }) {
   return (
-    <li className="flex gap-3 text-sm leading-relaxed text-slate-300 lg:gap-2.5 lg:text-[0.8125rem] lg:leading-snug">
+    <li className="flex gap-2.5 text-sm leading-relaxed text-zinc-700">
       <CheckIcon />
       <span>{children}</span>
     </li>
   )
 }
 
+const planCard =
+  'flex min-w-0 flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-7'
+
 export default function PricingPage() {
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(167,139,250,0.18),_transparent_30%)]" />
-      <div className="absolute left-10 top-16 h-32 w-32 rounded-full bg-cyan-400/10 blur-3xl" />
-      <div className="absolute bottom-12 right-12 h-40 w-40 rounded-full bg-violet-400/10 blur-3xl" />
-
-      <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-8 sm:px-6 lg:px-8 lg:pb-28 lg:pt-7">
-        {/* First screen: pricing hero + cards; testimonials start below the fold */}
-        <div className="flex min-h-[100dvh] flex-col">
-          <header className="mb-6 flex w-full shrink-0 flex-col gap-5 sm:mb-6 sm:flex-row sm:items-center sm:justify-between lg:mb-4">
-            <Link
-              href="/"
-              className="inline-flex w-fit items-center gap-2 text-lg font-semibold tracking-tight text-white transition hover:text-cyan-200"
-            >
-              <span className="h-2 w-2 rounded-full bg-cyan-400" aria-hidden />
-              JobFit AI
+    <main className="min-h-screen bg-zinc-50 text-zinc-900">
+      <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:pb-24 lg:pt-10">
+        <header className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-6">
+          <Link
+            href="/"
+            className="text-sm font-semibold tracking-tight text-zinc-900 transition hover:text-zinc-600"
+          >
+            JobFit AI
+          </Link>
+          <nav className="flex flex-wrap items-center gap-2 text-sm font-medium">
+            <Link href="/" className={`${btnSecondary} min-h-0 px-4 py-2`}>
+              Home
             </Link>
-            <nav className="flex flex-wrap items-center gap-3 text-sm font-medium sm:justify-end">
-              <Link
-                href="/"
-                className="rounded-full border border-slate-700 bg-slate-900/70 px-4 py-2 text-slate-200 backdrop-blur transition hover:border-slate-600 hover:text-white"
-              >
-                Home
-              </Link>
-              <Link
-                href="/analyze"
-                className="rounded-full border border-cyan-400/35 bg-cyan-500/10 px-4 py-2 text-cyan-100 transition hover:border-cyan-400/55 hover:bg-cyan-500/15"
-              >
-                Analyze CV
-              </Link>
-            </nav>
-          </header>
+            <Link href="/analyze" className={`${btnPrimary} min-h-0 px-4 py-2`}>
+              Analyze CV
+            </Link>
+          </nav>
+        </header>
 
-          {/* Vertically centers hero + cards on large screens; stacks from top on mobile if content is tall */}
-          <div className="flex min-h-0 flex-1 flex-col justify-start py-3 sm:py-5 lg:justify-center lg:py-6">
-          {/* Hero — centered column */}
-          <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-1 text-center sm:px-2">
-            <div className="mb-4 flex justify-center lg:mb-3">
-              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-slate-900/70 px-4 py-2 text-sm text-cyan-200 shadow-[0_0_30px_rgba(34,211,238,0.08)] backdrop-blur lg:px-3 lg:py-1.5 lg:text-xs">
-                <span className="h-2 w-2 rounded-full bg-cyan-400" />
-                Transparent pricing
-              </span>
-            </div>
-            <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-[2.35rem] lg:leading-[1.15] xl:text-5xl">
-              Choose your{' '}
-              <span className="bg-gradient-to-r from-cyan-300 via-sky-400 to-violet-400 bg-clip-text text-transparent">
-                JobFit plan
-              </span>
-            </h1>
-            <p className="mt-5 max-w-2xl text-pretty text-lg leading-relaxed text-slate-400 lg:mt-4 lg:text-base lg:leading-relaxed">
-              <span className="text-slate-300">Free</span> ({COPY_FREE_TIER_PRIMARY_LINE}) ·{' '}
-              <span className="text-violet-200/90">Pro Report</span> ({COPY_PRO_REPORT_ONELINE.toLowerCase()}) ·{' '}
-              <span className="text-cyan-200/85">Monthly Pro</span> ({COPY_MONTHLY_PRO_TAGLINE.toLowerCase()}). Checkout runs
-              on Stripe — you pay only when you upgrade.
-            </p>
-          </div>
+        <div className="mx-auto max-w-2xl text-center">
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+            Simple pricing
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-600 sm:text-base">
+            Start free. Pay only when you need a full report or apply to many roles in a month. Checkout is
+            handled by Stripe.
+          </p>
+        </div>
 
-          {/* Cards — centered single column on small screens; full row from lg */}
-          <div className="mx-auto mt-8 grid w-full max-w-md grid-cols-1 justify-items-stretch gap-8 pt-4 sm:max-w-xl sm:px-2 lg:mt-6 lg:max-w-6xl lg:grid-cols-3 lg:items-stretch lg:gap-6 lg:px-0 lg:pt-3 xl:gap-8">
+        <div className="mx-auto mt-10 grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-3 lg:items-stretch lg:gap-5">
           {/* Free */}
-          <article className="flex min-w-0 flex-col rounded-[28px] border border-slate-800 bg-slate-900/70 p-7 shadow-[0_0_60px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:p-8 lg:rounded-2xl lg:p-6">
-            <div className="mb-6 lg:mb-4">
-              <h2 className="text-lg font-semibold text-slate-100 lg:text-base">Free</h2>
-              <p className="mt-3 flex items-baseline gap-1 lg:mt-2">
-                <span className="text-4xl font-bold tabular-nums text-white lg:text-3xl">€0</span>
+          <article className={planCard}>
+            <div className="mb-5">
+              <h2 className="text-base font-semibold text-zinc-900">Free</h2>
+              <p className="mt-3 flex items-baseline gap-1">
+                <span className="text-3xl font-semibold tabular-nums text-zinc-900">€0</span>
               </p>
-              <p className="mt-2 text-sm text-slate-500 lg:text-xs">Always available · no card required</p>
+              <p className="mt-1 text-xs text-zinc-500">No card required</p>
             </div>
-            <ul className="flex flex-1 flex-col gap-3 lg:gap-2">
-              <FeatureItem>{COPY_FREE_TIER_PRIMARY_LINE}</FeatureItem>
-              <FeatureItem>Fit score & short summary</FeatureItem>
-              <FeatureItem>3 improvement suggestions (preview)</FeatureItem>
-              <FeatureItem>No card required</FeatureItem>
+            <ul className="flex flex-1 flex-col gap-2.5">
+              <FeatureItem>1 free analysis per day</FeatureItem>
+              <FeatureItem>Basic score and preview</FeatureItem>
             </ul>
-            <Link
-              href="/analyze"
-              className="mt-8 inline-flex w-full min-h-[44px] items-center justify-center rounded-full border border-slate-600 bg-slate-950/80 px-6 py-3 text-center text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900 lg:mt-6 lg:min-h-0 lg:py-2.5 lg:text-[13px]"
-            >
-              Start Free
+            <Link href="/analyze" className={`${btnSecondary} mt-6 w-full`}>
+              Start free
             </Link>
           </article>
 
-          {/* Pro Report — recommended */}
-          <article className="relative flex min-w-0 flex-col rounded-[28px] border-2 border-violet-400/45 bg-gradient-to-b from-violet-950/50 via-slate-900/90 to-slate-900/70 p-7 shadow-[0_0_80px_rgba(139,92,246,0.22),0_0_60px_rgba(34,211,238,0.08)] backdrop-blur-xl sm:p-8 lg:z-10 lg:rounded-2xl lg:p-6 lg:shadow-[0_0_48px_rgba(139,92,246,0.18)]">
-            <div className="absolute -top-3 left-1/2 flex -translate-x-1/2 justify-center lg:-top-2.5">
-              <span className="rounded-full border border-violet-400/40 bg-gradient-to-r from-violet-500/90 to-cyan-500/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white shadow-lg lg:px-3 lg:py-0.5 lg:text-[0.625rem]">
-                Recommended
-              </span>
-            </div>
-            <div className="mb-6 mt-3 lg:mb-4 lg:mt-2">
-              <h2 className="text-lg font-semibold text-white lg:text-base">Pro Report</h2>
-              <p className="mt-3 flex flex-wrap items-baseline gap-2 lg:mt-2">
-                <span className="text-4xl font-bold tabular-nums text-white lg:text-3xl">€{PRICE_PRO_REPORT_EUR}</span>
-                <span className="text-sm font-medium text-violet-200/90 lg:text-xs">one-time</span>
+          {/* Pro Report (recommended) */}
+          <article className={`${planCard} relative border-zinc-400`}>
+            <span className="absolute -top-2.5 left-4 rounded-md border border-zinc-300 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
+              Recommended
+            </span>
+            <div className="mb-5 pt-1">
+              <h2 className="text-base font-semibold text-zinc-900">Pro Report</h2>
+              <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="text-3xl font-semibold tabular-nums text-zinc-900">€{PRICE_PRO_REPORT_EUR}</span>
+                <span className="text-sm text-zinc-500">one-time</span>
               </p>
-              <p className="mt-2 text-sm text-violet-200/70 lg:text-xs">{COPY_PRO_REPORT_ONELINE}</p>
-              <Link
-                href="/pro-report"
-                className="mt-3 inline-block text-xs font-medium text-cyan-400/90 underline-offset-2 hover:text-cyan-300 hover:underline lg:mt-2"
-              >
-                See Pro Report overview →
-              </Link>
+              <p className="mt-1 text-xs text-zinc-500">One application, full report</p>
             </div>
-            <ul className="flex flex-1 flex-col gap-3 lg:gap-2">
-              <FeatureItem>{COPY_PRO_REPORT_INCLUDES}</FeatureItem>
-              <FeatureItem>Paid securely via Stripe (€{PRICE_PRO_REPORT_EUR} one-time)</FeatureItem>
+            <ul className="flex flex-1 flex-col gap-2.5">
+              <FeatureItem>One paid analysis</FeatureItem>
+              <FeatureItem>Full report for one application</FeatureItem>
+              <FeatureItem>ATS checklist</FeatureItem>
+              <FeatureItem>Cover letter</FeatureItem>
+              <FeatureItem>PDF export</FeatureItem>
             </ul>
-            <div className="mt-8 w-full lg:mt-6">
-              <ProReportCheckoutButton analyticsSurface="pricing_page_pro_report">{LABEL_BUY_PRO_REPORT}</ProReportCheckoutButton>
+            <div className="mt-6">
+              <ProReportCheckoutButton analyticsSurface="pricing_page_pro_report">
+                Buy Pro Report
+              </ProReportCheckoutButton>
             </div>
+            <Link
+              href="/pro-report"
+              className="mt-3 block text-center text-xs text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline"
+            >
+              What is Pro Report?
+            </Link>
           </article>
 
           {/* Monthly Pro */}
-          <article className="flex min-w-0 flex-col rounded-[28px] border border-slate-800 bg-slate-900/70 p-7 shadow-[0_0_60px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:p-8 lg:rounded-2xl lg:p-6">
-            <div className="mb-6 lg:mb-4">
-              <h2 className="text-lg font-semibold text-slate-100 lg:text-base">Monthly Pro</h2>
-              <p className="mt-3 flex flex-wrap items-baseline gap-2 lg:mt-2">
-                <span className="text-4xl font-bold tabular-nums text-white lg:text-3xl">€{PRICE_MONTHLY_PRO_EUR}</span>
-                <span className="text-sm font-medium text-slate-400 lg:text-xs">/month</span>
+          <article className={planCard}>
+            <div className="mb-5">
+              <h2 className="text-base font-semibold text-zinc-900">Monthly Pro</h2>
+              <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="text-3xl font-semibold tabular-nums text-zinc-900">€{PRICE_MONTHLY_PRO_EUR}</span>
+                <span className="text-sm text-zinc-500">/month</span>
               </p>
-              <p className="mt-2 text-sm text-slate-500 lg:text-xs">{COPY_MONTHLY_PRO_TAGLINE}</p>
+              <p className="mt-1 text-xs text-zinc-500">Best for active job seekers</p>
             </div>
-            <ul className="flex flex-1 flex-col gap-3 lg:gap-2">
-              <FeatureItem>{COPY_MONTHLY_PRO_INCLUDES_LONG}</FeatureItem>
-              <FeatureItem>Billed monthly via Stripe — cancel anytime from the portal</FeatureItem>
+            <ul className="flex flex-1 flex-col gap-2.5">
+              <FeatureItem>{MONTHLY_PRO_ANALYSES_PER_MONTH} analyses per month</FeatureItem>
+              <FeatureItem>Saved reports</FeatureItem>
+              <FeatureItem>Full premium features</FeatureItem>
+              <FeatureItem>Cancel anytime from the billing portal</FeatureItem>
             </ul>
-            <div className="mt-8 w-full lg:mt-6">
+            <div className="mt-6">
               <MonthlyProCheckoutButton analyticsSurface="pricing_page_monthly_pro">
-                {LABEL_SUBSCRIBE_MONTHLY_PRO}
+                Subscribe Monthly Pro
               </MonthlyProCheckoutButton>
             </div>
           </article>
         </div>
-          </div>
-        </div>
 
-        <TestimonialsSection
-          idPrefix="pricing"
-          compactTop
-          className="mx-auto max-w-6xl pt-10 lg:pt-12"
-        />
+        <p className="mx-auto mt-8 max-w-xl text-center text-xs leading-relaxed text-zinc-500">
+          Prices in EUR. Taxes may apply at checkout. Your plan controls which features unlock after payment.
+        </p>
 
-        <section className="mx-auto mt-20 max-w-3xl lg:mt-16" aria-labelledby="faq-heading">
-          <h2 id="faq-heading" className="text-center text-2xl font-semibold text-white sm:text-3xl">
-            Frequently asked questions
+        <TestimonialsSection idPrefix="pricing" compactTop className="mx-auto max-w-6xl pt-14" />
+
+        <section className="mx-auto mt-16 max-w-2xl" aria-labelledby="faq-heading">
+          <h2 id="faq-heading" className="text-center text-xl font-semibold text-zinc-900">
+            Common questions
           </h2>
-          <p className="mt-3 text-center text-sm text-slate-500">
-            Straight answers before you commit — no surprises at checkout.
-          </p>
 
-          <dl className="mt-10 space-y-4">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-5 py-5 backdrop-blur sm:px-6">
-              <dt className="font-semibold text-slate-100">Can I use it for German jobs?</dt>
-              <dd className="mt-3 text-sm leading-relaxed text-slate-400">
-                Yes. Paste German job descriptions and CV text — the analyzer focuses on overlap between what you wrote
-                and what the employer asks for, regardless of language. Results follow the language of your inputs.
+          <dl className="mt-8 space-y-3">
+            <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
+              <dt className="text-sm font-medium text-zinc-900">Can I use this for German job postings?</dt>
+              <dd className="mt-2 text-sm leading-relaxed text-zinc-600">
+                Yes. Paste German or English CV and job text. The analyzer compares what you wrote with what the
+                employer asks for.
               </dd>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-5 py-5 backdrop-blur sm:px-6">
-              <dt className="font-semibold text-slate-100">Is my CV private?</dt>
-              <dd className="mt-3 text-sm leading-relaxed text-slate-400">
-                Your CV and job text are sent only to generate your analysis. We do not train public models on your data.
-                See our{' '}
-                <Link href="/privacy" className="text-cyan-400 underline-offset-2 hover:underline">
+            <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
+              <dt className="text-sm font-medium text-zinc-900">Is my CV private?</dt>
+              <dd className="mt-2 text-sm leading-relaxed text-zinc-600">
+                Your text is used only to generate your analysis. We do not train public models on it. See our{' '}
+                <Link href="/privacy" className="text-zinc-800 underline-offset-2 hover:underline">
                   Privacy
                 </Link>{' '}
-                policy for details on retention and your rights.
+                policy for retention and your rights.
               </dd>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-5 py-5 backdrop-blur sm:px-6">
-              <dt className="font-semibold text-slate-100">Can I cancel Monthly Pro?</dt>
-              <dd className="mt-3 text-sm leading-relaxed text-slate-400">
-                Yes. Monthly Pro is a subscription billed through Stripe. You can cancel before renewal anytime from the
-                customer billing portal linked after checkout.
-              </dd>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-5 py-5 backdrop-blur sm:px-6">
-              <dt className="font-semibold text-slate-100">Is this useful for international job seekers in Germany?</dt>
-              <dd className="mt-3 text-sm leading-relaxed text-slate-400">
-                Very often, yes. It highlights whether your CV reflects what German postings emphasize — tools, seniority,
-                language hints, and domain keywords — so you can adapt before you apply.
+            <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
+              <dt className="text-sm font-medium text-zinc-900">Can I cancel Monthly Pro?</dt>
+              <dd className="mt-2 text-sm leading-relaxed text-zinc-600">
+                Yes. Billing runs through Stripe. Cancel before your next renewal from the customer portal linked
+                after checkout.
               </dd>
             </div>
           </dl>
         </section>
 
-        <footer className="mx-auto mt-20 max-w-3xl border-t border-slate-800 pt-10 text-center text-xs leading-relaxed text-slate-600">
-          <p>
-            Prices shown in EUR. Taxes may apply at checkout. Feature availability follows your active plan after purchase.
-          </p>
-          <nav className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2 text-[11px] text-slate-500">
-            <Link href="/privacy" className="hover:text-cyan-400">
+        <footer className="mx-auto mt-16 max-w-2xl border-t border-zinc-200 pt-8 text-center text-xs text-zinc-500">
+          <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+            <Link href="/privacy" className="hover:text-zinc-800">
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-cyan-400">
+            <Link href="/terms" className="hover:text-zinc-800">
               Terms
             </Link>
-            <Link href="/refund-policy" className="hover:text-cyan-400">
+            <Link href="/refund-policy" className="hover:text-zinc-800">
               Refunds
             </Link>
-            <Link href="/imprint" className="hover:text-cyan-400">
+            <Link href="/imprint" className="hover:text-zinc-800">
               Imprint
             </Link>
           </nav>
-          <Link href="/" className="mt-5 inline-block text-slate-500 transition hover:text-cyan-400">
-            ← JobFit AI home
+          <Link href="/" className="mt-4 inline-block hover:text-zinc-800">
+            Back to home
           </Link>
         </footer>
       </div>

@@ -36,6 +36,11 @@ export function stripMatchScorePrefix(raw: string): string {
   return raw.replace(/^Match Score:\s*\d{1,3}\/100\s*\n*/i, '').trim()
 }
 
+/** True when the analyzer returned a structured fit report (not a plain error/status string). */
+export function isFitAnalysisOutput(raw: string): boolean {
+  return /Match Score:\s*\d{1,3}\/100/i.test(raw)
+}
+
 /**
  * Best-effort structured parse of the LLM template. Unknown shapes degrade gracefully (sections may be empty).
  */

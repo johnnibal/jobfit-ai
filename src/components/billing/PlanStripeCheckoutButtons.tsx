@@ -5,6 +5,8 @@ import { useCallback, useState } from 'react'
 import { trackEvent } from '@/lib/analytics/track'
 import { useBillingSandboxEnvironment } from '@/lib/billing/useBillingSandboxEnvironment'
 
+import { btnPrimaryFull, btnSecondaryFull } from '@/components/ui/theme'
+
 /** Shared error handling — billing sandbox hints only appear on localhost (see hook). */
 function useStripeCheckoutNavigate() {
   const billingSandboxVisible = useBillingSandboxEnvironment()
@@ -28,8 +30,7 @@ type ProReportCheckoutButtonProps = {
   disabled?: boolean
 }
 
-const PRO_REPORT_BTN_DEFAULT =
-  'inline-flex w-full min-h-[44px] items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-violet-500 px-6 py-3 text-center text-sm font-semibold text-slate-950 shadow-[0_0_28px_rgba(139,92,246,0.35)] transition hover:scale-[1.02] hover:shadow-[0_0_36px_rgba(56,189,248,0.4)] disabled:cursor-not-allowed disabled:opacity-50'
+const PRO_REPORT_BTN_DEFAULT = btnPrimaryFull
 
 /** Starts Stripe Checkout for Pro Report (scoped unlock) or prepaid credit SKU. */
 export function ProReportCheckoutButton({
@@ -69,7 +70,7 @@ export function ProReportCheckoutButton({
         if (res.status === 503 && data.fallbackDemo) {
           if (billingSandboxVisible) {
             scrollToSandbox()
-            setErr(typeof data.error === 'string' ? data.error : 'Billing unavailable — use the sandbox below.')
+            setErr(typeof data.error === 'string' ? data.error : 'Billing unavailable. Use the sandbox below.')
           } else {
             setErr(
               typeof data.error === 'string'
@@ -114,7 +115,7 @@ export function ProReportCheckoutButton({
         {busy ? 'Opening checkout…' : children}
       </button>
       {err ? (
-        <p className="mt-2 text-center text-[11px] leading-relaxed text-amber-200/95">{err}</p>
+        <p className="mt-2 text-center text-xs leading-relaxed text-red-700">{err}</p>
       ) : null}
     </div>
   )
@@ -128,8 +129,7 @@ type MonthlyProCheckoutButtonProps = {
   disabled?: boolean
 }
 
-const MONTHLY_BTN_DEFAULT =
-  'inline-flex w-full min-h-[44px] items-center justify-center rounded-full border border-cyan-400/35 bg-cyan-500/10 px-6 py-3 text-center text-sm font-semibold text-cyan-100 transition hover:border-cyan-400/55 hover:bg-cyan-500/15 disabled:cursor-not-allowed disabled:opacity-50'
+const MONTHLY_BTN_DEFAULT = btnSecondaryFull
 
 export function MonthlyProCheckoutButton({
   className,
@@ -162,7 +162,7 @@ export function MonthlyProCheckoutButton({
         if (res.status === 503 && data.fallbackDemo) {
           if (billingSandboxVisible) {
             scrollToSandbox()
-            setErr(typeof data.error === 'string' ? data.error : 'Billing unavailable — use the sandbox below.')
+            setErr(typeof data.error === 'string' ? data.error : 'Billing unavailable. Use the sandbox below.')
           } else {
             setErr(
               typeof data.error === 'string'
@@ -199,7 +199,7 @@ export function MonthlyProCheckoutButton({
         {busy ? 'Opening checkout…' : children}
       </button>
       {err ? (
-        <p className="mt-2 text-center text-[11px] leading-relaxed text-amber-200/95">{err}</p>
+        <p className="mt-2 text-center text-xs leading-relaxed text-red-700">{err}</p>
       ) : null}
     </div>
   )

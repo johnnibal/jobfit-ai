@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { badge, navLink } from '@/components/ui/theme'
 
 function LockGlyph({ className }: { className?: string }) {
   return (
@@ -30,33 +31,31 @@ export type AppNavProps = {
 
 export function AppNav({ monthlyProActive, savedReportsLocked, onLockedSavedReports }: AppNavProps) {
   return (
-    <nav className="flex flex-wrap items-center gap-5 text-sm font-medium">
-      <Link href="/analyze" className="text-slate-300 transition hover:text-cyan-200">
+    <nav className="flex flex-wrap items-center gap-5">
+      <Link href="/analyze" className={navLink}>
         Analyze
       </Link>
       {savedReportsLocked ? (
         <button
           type="button"
           onClick={() => onLockedSavedReports?.()}
-          className="inline-flex items-center gap-1.5 text-slate-500 transition hover:text-violet-200"
+          className={`inline-flex items-center gap-1.5 ${navLink} text-zinc-400`}
         >
-          <LockGlyph className="text-violet-400/90" />
+          <LockGlyph className="text-zinc-400" />
           Saved Reports
         </button>
       ) : (
-        <Link href="/dashboard/reports" className="text-slate-300 transition hover:text-violet-200">
+        <Link href="/dashboard/reports" className={navLink}>
           Saved Reports
           {monthlyProActive ? (
-            <span className="ml-1.5 rounded-full border border-cyan-500/35 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-100">
-              Pro
-            </span>
+            <span className={`${badge} ml-1.5`}>Pro</span>
           ) : null}
         </Link>
       )}
-      <Link href="/pricing" className="text-slate-400 transition hover:text-slate-200">
+      <Link href="/pricing" className={navLink}>
         Pricing
       </Link>
-      <Link href="/pro-report" className="text-slate-400 transition hover:text-violet-200">
+      <Link href="/pro-report" className={navLink}>
         Pro Report
       </Link>
     </nav>

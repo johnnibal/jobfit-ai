@@ -21,6 +21,20 @@ import { getAnalysisQuotaCap } from '@/lib/analysisPermissions'
 import { LABEL_BUY_PRO_REPORT, LABEL_SUBSCRIBE_MONTHLY_PRO } from '@/lib/planTypes'
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { trackEvent } from '@/lib/analytics/track'
+import { isFitAnalysisOutput } from '@/lib/parseAnalysis'
+import {
+  alertError,
+  alertInfo,
+  alertWarning,
+  btnPrimary,
+  card,
+  cardPadding,
+  formFieldGroup,
+  formHint,
+  formLabel,
+  inputSurface,
+  pageMain,
+} from '@/components/ui/theme'
 
 const emptyBilling: SubscriptionBillingUi = {
   loading: false,
@@ -32,10 +46,6 @@ const emptyBilling: SubscriptionBillingUi = {
   cancelAtPeriodEnd: false,
   lastPaymentFailedAt: null,
   error: null,
-}
-
-function isSuccessfulFitAnalysisOutput(text: string): boolean {
-  return /Match Score:\s*\d{1,3}\/100/i.test(text)
 }
 
 type GatedAnalysisPayload = {
@@ -353,7 +363,7 @@ export default function AnalyzePageClient() {
     e.preventDefault()
 
     if (usageUi.status === 'loading') {
-      setResult('Usage quota is still loading — please wait a moment.')
+      setResult('Usage quota is still loading. Please wait a moment.')
       return
     }
 
@@ -434,7 +444,7 @@ export default function AnalyzePageClient() {
       const serverIdRaw = typeof data.analysisId === 'string' ? data.analysisId.trim() : ''
       if (!serverIdRaw || !isAnalysisSessionId(serverIdRaw)) {
         trackEvent('analysis_completed', { ok: false })
-        setResult('Analysis completed without a server report id — please retry.')
+        setResult('Analysis completed without a server report id. Please retry.')
         return
       }
 
@@ -449,7 +459,7 @@ export default function AnalyzePageClient() {
         (usageUi.status === 'ready' && usageUi.monthlyProVerified) ||
         serverFullAccess
 
-      if (isSuccessfulFitAnalysisOutput(msg) && !skipGrowthEmailGate) {
+      if (isFitAnalysisOutput(msg) && !skipGrowthEmailGate) {
         setGatedAnalysis({ analysisId: id, resultText: msg })
       } else {
         setGatedAnalysis(null)
@@ -560,7 +570,7 @@ export default function AnalyzePageClient() {
   const hasStripeBillingHistory = billing.fetched && billing.subscriptionStatus !== 'none'
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
+    <main className={pageMain}>
       <ConversionUpgradeModal
         open={upgradeModal.open}
         variant={upgradeModal.variant}
@@ -577,13 +587,9 @@ export default function AnalyzePageClient() {
         portalBusy={portalBusy}
       />
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(167,139,250,0.18),_transparent_30%)]" />
-      <div className="absolute left-10 top-16 h-32 w-32 rounded-full bg-cyan-400/10 blur-3xl" />
-      <div className="absolute bottom-12 right-12 h-40 w-40 rounded-full bg-violet-400/10 blur-3xl" />
-
-      <section className="relative mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/70 pb-6">
-          <Link href="/" className="text-sm font-semibold tracking-tight text-slate-100 hover:text-cyan-200">
+      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-6">
+          <Link href="/" className="text-sm font-semibold tracking-tight text-zinc-900 hover:text-zinc-600">
             JobFit AI
           </Link>
           <AppNav
@@ -596,114 +602,109 @@ export default function AnalyzePageClient() {
           />
         </div>
 
-        <div className="mb-10 max-w-3xl">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-slate-900/70 px-4 py-2 text-sm text-cyan-200 shadow-[0_0_30px_rgba(34,211,238,0.08)] backdrop-blur">
-            <span className="h-2 w-2 rounded-full bg-cyan-400" />
-            AI-powered fit scoring
-          </div>
-
-          <h1 className="text-4xl font-bold leading-tight sm:text-5xl">
-            Analyze your
-            <span className="bg-gradient-to-r from-cyan-300 via-sky-400 to-violet-400 bg-clip-text text-transparent">
-              {' '}
-              CV against the role
-            </span>
+        <div className="mb-8 max-w-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+            Analyze your CV against the role
           </h1>
-
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            Upload your resume, paste the job description, and let JobFit.AI highlight alignment, gaps, and opportunities
-            to improve your application.
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
+            Paste your CV and the job posting. JobFit AI scores fit, highlights gaps, and suggests concrete edits.
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+        <div
+          className={
+            result || gatedAnalysis
+              ? 'grid gap-6 lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)_minmax(260px,288px)] lg:items-start'
+              : 'grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start'
+          }
+        >
           <form
             onSubmit={handleSubmit}
-            className="rounded-[28px] border border-slate-800 bg-slate-900/70 p-6 shadow-[0_0_60px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:p-8"
+            className={`${card} ${cardPadding} order-1 lg:sticky lg:top-6 lg:self-start`}
           >
-            <div className="grid gap-6">
+            <div className={formFieldGroup}>
+              <div className="border-b border-zinc-100 pb-4">
+                <h2 className="text-sm font-semibold text-zinc-900">Application inputs</h2>
+                <p className="mt-1 text-xs text-zinc-500">Required for each analysis run.</p>
+              </div>
+
               {usageUi.status === 'ready' && !usageUi.canRun ? (
-                <div className="rounded-2xl border border-amber-400/35 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-100">
-                  You have no analyses left this period until quota resets — use{' '}
-                  <span className="font-semibold text-amber-50">{LABEL_BUY_PRO_REPORT}</span> for one paid run + full report,
-                  or <span className="font-semibold text-amber-50">{LABEL_SUBSCRIBE_MONTHLY_PRO}</span> if you apply often.
+                <div className={alertWarning}>
+                  You have no analyses left this period until quota resets. Use{' '}
+                  <span className="font-semibold">{LABEL_BUY_PRO_REPORT}</span> for one paid run + full report, or{' '}
+                  <span className="font-semibold">{LABEL_SUBSCRIBE_MONTHLY_PRO}</span> if you apply often.
                 </div>
               ) : null}
 
               {usageUi.status === 'error' ? (
-                <div className="rounded-2xl border border-rose-400/35 bg-rose-500/10 px-4 py-3 text-sm leading-relaxed text-rose-100">
-                  {usageUi.message}
-                </div>
+                <div className={alertError}>{usageUi.message}</div>
               ) : null}
 
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
-                <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
-                  Upload CV (PDF)
+              <div>
+                <label htmlFor="cv-pdf-upload" className={formLabel}>
+                  CV file (PDF)
                 </label>
+                <p className={`mt-1 ${formHint}`}>Optional. Upload to extract text into the field below.</p>
                 <input
+                  id="cv-pdf-upload"
                   type="file"
                   accept="application/pdf"
                   onChange={handlePdfUpload}
-                  className="block w-full text-sm text-slate-300 file:mr-4 file:rounded-full file:border-0 file:bg-gradient-to-r file:from-cyan-400 file:to-violet-500 file:px-5 file:py-3 file:font-semibold file:text-slate-950 hover:file:brightness-110"
+                  className="mt-2 block w-full text-sm text-zinc-600 file:mr-3 file:rounded-md file:border file:border-zinc-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-zinc-800 hover:file:bg-zinc-50"
                 />
-                <p className="mt-3 text-sm text-slate-400">
-                  Upload a PDF to auto-fill your CV text, then edit it if needed.
-                </p>
               </div>
 
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
-                <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
-                  CV Text
+              <div>
+                <label htmlFor="cv-text" className={formLabel}>
+                  CV text
                 </label>
+                <p className={`mt-1 ${formHint}`}>Paste or edit your resume. Include roles, skills, and dates.</p>
                 <textarea
+                  id="cv-text"
                   value={cv}
                   onChange={(e) => setCv(e.target.value)}
-                  rows={8}
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-900/80 p-4 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
-                  placeholder="Paste your resume text or upload a PDF..."
+                  rows={9}
+                  className={`mt-2 ${inputSurface}`}
+                  placeholder="Paste your resume text here…"
                   required
                 />
               </div>
 
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
-                <label className="mb-3 block text-sm font-semibold uppercase tracking-[0.2em] text-violet-300">
-                  Job Description
+              <div>
+                <label htmlFor="job-description" className={formLabel}>
+                  Job description
                 </label>
+                <p className={`mt-1 ${formHint}`}>Paste the full posting you are applying to.</p>
                 <textarea
+                  id="job-description"
                   value={jd}
                   onChange={(e) => setJd(e.target.value)}
-                  rows={8}
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-900/80 p-4 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20"
-                  placeholder="Paste the job description here..."
+                  rows={9}
+                  className={`mt-2 ${inputSurface}`}
+                  placeholder="Paste the job description here…"
                   required
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={submitDisabled}
-                className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-violet-500 px-7 py-3 font-semibold text-slate-950 transition hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(56,189,248,0.35)] disabled:cursor-not-allowed disabled:opacity-70"
-              >
+              <button type="submit" disabled={submitDisabled} className={`${btnPrimary} w-full`}>
                 {loading
-                  ? 'Analyzing your fit...'
+                  ? 'Analyzing…'
                   : usageUi.status === 'loading'
                     ? 'Loading quota…'
                     : usageUi.status === 'error'
                       ? 'Quota unavailable'
                       : !usageUi.canRun
-                        ? 'Quota reached — upgrade'
-                        : 'Analyze Match'}
+                        ? 'Quota reached'
+                        : 'Run analysis'}
               </button>
             </div>
           </form>
 
-          <div className="flex min-w-0 flex-col gap-4">
-            {growthEmailNotice ? (
-              <div className="rounded-2xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-3 text-sm leading-relaxed text-cyan-100/95">
-                {growthEmailNotice}
-              </div>
-            ) : null}
-            <AnalysisInsightsPanel
+          {growthEmailNotice && !(result || gatedAnalysis) ? (
+            <div className={`order-2 ${alertInfo}`}>{growthEmailNotice}</div>
+          ) : null}
+
+          <AnalysisInsightsPanel
               result={result}
               monthlyProActive={monthlyProActive}
               subscriberMonthlyPro={billing.fetched && billing.monthlyProActive}
@@ -749,7 +750,6 @@ export default function AnalyzePageClient() {
               cvText={cv}
               jobDescription={jd}
             />
-          </div>
         </div>
       </section>
     </main>

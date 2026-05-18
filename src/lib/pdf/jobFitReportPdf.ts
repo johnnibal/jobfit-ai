@@ -53,7 +53,7 @@ export function buildJobFitReportPdfHtml(input: JobFitPdfInput): string {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>JobFit AI — Application report</title>
+<title>JobFit AI: Application report</title>
 <style>
   @page { margin: 16mm 14mm; }
   * { box-sizing: border-box; }
@@ -103,10 +103,10 @@ export function buildJobFitReportPdfHtml(input: JobFitPdfInput): string {
     gap: 6px;
     padding: 10px 20px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #ecfeff 0%, #f5f3ff 100%);
-    border: 1px solid #bae6fd;
+    background: #fafafa;
+    border: 1px solid #e4e4e7;
   }
-  .score-num { font-size: 32px; font-weight: 800; color: #0e7490; line-height: 1; }
+  .score-num { font-size: 32px; font-weight: 800; color: #18181b; line-height: 1; }
   .score-denom { font-size: 14px; font-weight: 700; color: #64748b; }
   .pdf-section {
     margin-bottom: 22px;
@@ -115,7 +115,7 @@ export function buildJobFitReportPdfHtml(input: JobFitPdfInput): string {
   .pdf-section h2 {
     margin: 0 0 10px;
     padding-left: 10px;
-    border-left: 3px solid #7c3aed;
+    border-left: 3px solid #71717a;
     font-size: 10.5pt;
     font-weight: 700;
     letter-spacing: 0.08em;

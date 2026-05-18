@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import SubscriptionSuccessClient from './SubscriptionSuccessClient'
+import { card, cardPadding, pageMain } from '@/components/ui/theme'
 
 export const metadata: Metadata = {
   title: 'Subscription confirmed · JobFit AI',
@@ -9,10 +10,10 @@ export const metadata: Metadata = {
 
 function Fallback() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
+    <main className={pageMain}>
       <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-4">
-        <div className="rounded-[28px] border border-slate-800 bg-slate-900/80 p-8">
-          <p className="text-sm text-slate-400">Loading…</p>
+        <div className={`${card} ${cardPadding}`}>
+          <p className="text-sm text-zinc-500">Loading…</p>
         </div>
       </div>
     </main>

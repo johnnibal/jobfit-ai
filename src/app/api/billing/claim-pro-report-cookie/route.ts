@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            'This analyzer result does not show a paid unlock yet—wait a minute, open your checkout confirmation page again (/checkout/success?session_id=…), or reload this page so we can mint your secure cookie while Stripe finishes.',
+            'This analyzer result does not show a paid unlock yet. Wait a minute, open your checkout confirmation page again (/checkout/success?session_id=…), or reload this page so we can mint your secure cookie while Stripe finishes.',
           code: 'unlock_not_visible',
         },
         { status: 403 }

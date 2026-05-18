@@ -22,7 +22,7 @@ export type Testimonial = {
 export const PLACEHOLDER_TESTIMONIALS: readonly Testimonial[] = [
   {
     name: 'Example name (not a real person)',
-    role: 'Example role field — placeholder text only',
+    role: 'Example role field, placeholder text only',
     country: 'Example country field',
     quote:
       'This is placeholder copy for layout and accessibility testing. It is not a quote from a customer. Replace with approved testimonials when you have them.',
@@ -31,7 +31,7 @@ export const PLACEHOLDER_TESTIMONIALS: readonly Testimonial[] = [
   {
     name: 'Second example slot',
     role: 'Another fictitious role label',
-    country: '—',
+    country: 'N/A',
     quote:
       'Example feedback only. Do not treat this text as social proof. Star ratings here are illustrative.',
     rating: 4,
