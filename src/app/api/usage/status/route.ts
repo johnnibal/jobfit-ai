@@ -16,6 +16,11 @@ import {
 } from '@/lib/usage/anonymousCookie'
 import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
 import {
+  JOBFIT_PRO_REPORT_PENDING_CREDIT_COOKIE,
+  parseVerifiedProReportPendingCreditId,
+} from '@/lib/billing/proReportCreditCookie.server'
+import { loadConsumableProReportPendingCredit } from '@/lib/billing/proReportPendingCredit.server'
+import {
   JOBFIT_MONTHLY_PRO_COOKIE,
   verifyMonthlyProEntitlementCookie,
 } from '@/lib/billing/signedPremiumCookie'
@@ -51,13 +56,31 @@ export async function GET() {
     monthlyProVerified,
   }
 
+  let prepaidCreditEligible = false
+  if (!monthlyProVerified) {
+    const creditParsed = parseVerifiedProReportPendingCreditId(
+      jar.get(JOBFIT_PRO_REPORT_PENDING_CREDIT_COOKIE)?.value
+    )
+    if (creditParsed) {
+      const creditRow = await loadConsumableProReportPendingCredit({
+        creditIdFromCookie: creditParsed,
+        anonymousSessionId,
+      })
+      prepaidCreditEligible = !!creditRow
+    }
+  }
+
+  const baseCanRun = canRunAnalysis(snapshot)
+  const canRun = baseCanRun || prepaidCreditEligible
+
   const res = NextResponse.json({
     monthlyProVerified,
     quotaMode: mode,
     used: usedInPeriod,
     limit,
     remaining: getRemainingAnalyses(snapshot),
-    canRun: canRunAnalysis(snapshot),
+    canRun,
+    prepaidProReportCreditEligible: prepaidCreditEligible,
   })
 
   applyAnonymousSessionCookie(res, signedAnon)

@@ -2,12 +2,20 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 
-import { PRICE_PRO_REPORT_EUR } from '@/lib/planTypes'
+import {
+  COPY_PRO_REPORT_INCLUDES,
+  COPY_PRO_REPORT_ONELINE,
+  PRICE_PRO_REPORT_EUR,
+} from '@/lib/planTypes'
+import {
+  ProReportLandingPrimaryCtas,
+  ProReportLandingPricePrimaryCta,
+} from '@/components/marketing/ProReportLandingCtas'
 
 export const metadata: Metadata = {
   title: 'Pro Report — JobFit AI',
   description:
-    'One-time full CV–job analysis: suggestions, recruiter red flags, ATS checklist, cover letter, and PDF export for €4.99.',
+    'One paid analysis plus full CV–job report: ATS checklist, cover letter, and PDF export. €4.99 one-time (not a subscription).',
 }
 
 function CheckIcon() {
@@ -77,30 +85,15 @@ export default function ProReportSalesPage() {
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-slate-900/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-violet-200">
             Pro Report · one-time
           </div>
-          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
-            Unlock the full report for your next job application.
-          </h1>
+          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">Pro Report · full detail for one application</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-300 sm:mx-0">
-            Get the complete CV-job match analysis, ATS keywords, tailored cover letter, and PDF export.
+            <span className="text-slate-200">{COPY_PRO_REPORT_ONELINE}</span> {COPY_PRO_REPORT_INCLUDES}
           </p>
 
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap">
-            <Link
-              href="/analyze"
-              className="inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-violet-500 px-8 py-3.5 text-center font-semibold text-slate-950 shadow-[0_0_28px_rgba(139,92,246,0.35)] transition hover:scale-[1.02] hover:shadow-[0_0_36px_rgba(56,189,248,0.35)] sm:w-auto"
-            >
-              Unlock Pro Report
-            </Link>
-            <Link
-              href="/pricing"
-              className="inline-flex w-full items-center justify-center rounded-full border border-slate-600 bg-slate-900/80 px-6 py-3.5 text-sm font-semibold text-slate-200 backdrop-blur transition hover:border-slate-500 sm:w-auto"
-            >
-              Compare with Monthly Pro
-            </Link>
-          </div>
+          <ProReportLandingPrimaryCtas />
           <p className="mt-4 text-xs leading-relaxed text-slate-500">
-            Run a free match first, then unlock the full detail for that application in the analyzer. Paid securely via
-            Stripe · €{PRICE_PRO_REPORT_EUR} once per unlock.
+            Paid securely via Stripe ({PRICE_PRO_REPORT_EUR} one-time). You can start from the analyzer with a free run, or{' '}
+            <span className="text-slate-400">buy now</span> to fund your next paid Pro analysis on this browser.
           </p>
         </section>
 
@@ -111,7 +104,8 @@ export default function ProReportSalesPage() {
               What is included
             </h2>
             <p className="mt-2 text-sm text-slate-400">
-              Everything gated on the free tier for the analysis you just ran — unlocked for one posting.
+              When you unlock (or prepaid), everything that stays blurred on Free opens for{' '}
+              <span className="text-slate-300">one successful analysis session</span> — not a rolling subscription.
             </p>
             <ul className="mt-6 grid gap-3 sm:grid-cols-2">
               <InclusionItem>Full fit analysis</InclusionItem>
@@ -162,13 +156,12 @@ export default function ProReportSalesPage() {
               <span className="text-5xl font-bold text-white">€{PRICE_PRO_REPORT_EUR}</span>
               <span className="text-base font-medium text-violet-200/85">one-time</span>
             </p>
-            <p className="mt-2 text-sm text-slate-500">Per Pro Report unlock · not a subscription</p>
-            <Link
-              href="/analyze"
-              className="mt-8 inline-flex w-full min-h-[48px] items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-violet-500 px-8 py-3.5 font-semibold text-slate-950 shadow-[0_0_28px_rgba(56,189,248,0.3)] transition hover:scale-[1.02] sm:mx-auto sm:w-auto sm:min-w-[240px]"
-            >
-              Unlock Pro Report
-            </Link>
+            <p className="mt-2 text-sm text-slate-500">
+              {COPY_PRO_REPORT_ONELINE} · €{PRICE_PRO_REPORT_EUR} one-time · {COPY_PRO_REPORT_INCLUDES}
+            </p>
+            <div className="mt-8 flex justify-center">
+              <ProReportLandingPricePrimaryCta />
+            </div>
           </div>
         </section>
 
@@ -179,7 +172,10 @@ export default function ProReportSalesPage() {
           </h2>
           <div className="mt-8 space-y-4">
             <FaqItem q="Is this a subscription?">
-              <p>No. Pro Report is a one-time payment for the full breakdown tied to your current analysis.</p>
+              <p>
+                No. Pro Report is a one-time €{PRICE_PRO_REPORT_EUR} payment — either for your current analyzer result
+                (“unlock”), or prepaid as a browser credit so your next paid run unlocks automatically.
+              </p>
               <p className="mt-2">
                 Want ongoing quota and saved reports? See{' '}
                 <Link href="/pricing" className="text-cyan-400 underline-offset-2 hover:underline">

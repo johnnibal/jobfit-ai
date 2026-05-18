@@ -5,10 +5,17 @@ import AnimatedHeroLogo from '@/components/AnimatedHeroLogo'
 import { HomeTrackedLink } from '@/components/analytics/HomeTrackedLink'
 import { TestimonialsSection } from '@/components/marketing/TestimonialsSection'
 import {
-  MONTHLY_PRO_ANALYSES_PER_MONTH,
+  COPY_FREE_TIER_PRIMARY_LINE,
+  COPY_MONTHLY_PRO_INCLUDES_LONG,
+  COPY_MONTHLY_PRO_TAGLINE,
+  COPY_PRO_REPORT_INCLUDES,
+  COPY_PRO_REPORT_ONELINE,
+  LABEL_SUBSCRIBE_MONTHLY_PRO,
   PRICE_MONTHLY_PRO_EUR,
   PRICE_PRO_REPORT_EUR,
 } from '@/lib/planTypes'
+import { MarketingProReportPricingButton } from '@/components/billing/MarketingProReportPricingButton'
+import { MonthlyProCheckoutButton } from '@/components/billing/PlanStripeCheckoutButtons'
 
 export const metadata: Metadata = {
   title: 'JobFit AI — CV fit scoring for Germany',
@@ -248,8 +255,8 @@ export default function Home() {
                 <p className="mt-2 text-sm text-slate-500">Try the analyzer — essentials first</p>
               </div>
               <ul className="flex flex-1 flex-col gap-3 text-sm">
-                <Bullet>Fit score &amp; daily free run</Bullet>
-                <Bullet>Core suggestions preview</Bullet>
+                <Bullet>{COPY_FREE_TIER_PRIMARY_LINE}</Bullet>
+                <Bullet>Fit score & short summary preview</Bullet>
                 <Bullet>No card required</Bullet>
               </ul>
               <HomeTrackedLink
@@ -273,19 +280,12 @@ export default function Home() {
                   <span className="text-4xl font-bold tabular-nums text-white">€{PRICE_PRO_REPORT_EUR}</span>
                   <span className="text-sm font-medium text-violet-200/90">one-time</span>
                 </p>
-                <p className="mt-2 text-sm text-violet-200/70">Full depth for one application</p>
+                <p className="mt-2 text-sm text-violet-200/70">{COPY_PRO_REPORT_ONELINE}</p>
               </div>
               <ul className="flex flex-1 flex-col gap-3 text-sm">
-                <Bullet>All suggestions &amp; ATS detail</Bullet>
-                <Bullet>Cover letter + PDF export</Bullet>
+                <Bullet>{COPY_PRO_REPORT_INCLUDES}</Bullet>
               </ul>
-              <HomeTrackedLink
-                href="/analyze"
-                ctaId="pricing_preview_pro_report"
-                className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-violet-500 px-6 py-3 text-center text-sm font-semibold text-slate-950 shadow-[0_0_28px_rgba(139,92,246,0.35)] transition hover:scale-[1.02] hover:shadow-[0_0_36px_rgba(56,189,248,0.4)]"
-              >
-                Go to analyzer
-              </HomeTrackedLink>
+              <MarketingProReportPricingButton />
             </article>
 
             <article className="flex flex-col rounded-[28px] border border-slate-800 bg-slate-900/70 p-8 shadow-[0_0_60px_rgba(15,23,42,0.65)] backdrop-blur-xl">
@@ -295,19 +295,16 @@ export default function Home() {
                   <span className="text-4xl font-bold tabular-nums text-white">€{PRICE_MONTHLY_PRO_EUR}</span>
                   <span className="text-sm font-medium text-slate-400">/month</span>
                 </p>
-                <p className="mt-2 text-sm text-slate-500">For active applications</p>
+                <p className="mt-2 text-sm text-slate-500">{COPY_MONTHLY_PRO_TAGLINE}</p>
               </div>
               <ul className="flex flex-1 flex-col gap-3 text-sm">
-                <Bullet>Up to {MONTHLY_PRO_ANALYSES_PER_MONTH} analyses / month (UTC)</Bullet>
-                <Bullet>Saved reports &amp; full exports</Bullet>
+                <Bullet>{COPY_MONTHLY_PRO_INCLUDES_LONG}</Bullet>
               </ul>
-              <HomeTrackedLink
-                href="/analyze"
-                ctaId="pricing_preview_monthly_pro"
-                className="mt-8 inline-flex w-full items-center justify-center rounded-full border border-cyan-400/35 bg-cyan-500/10 px-6 py-3 text-center text-sm font-semibold text-cyan-100 transition hover:border-cyan-400/55 hover:bg-cyan-500/15"
-              >
-                Go to analyzer
-              </HomeTrackedLink>
+              <div className="mt-8 w-full">
+                <MonthlyProCheckoutButton analyticsSurface="homepage_pricing_preview_monthly_pro">
+                  {LABEL_SUBSCRIBE_MONTHLY_PRO}
+                </MonthlyProCheckoutButton>
+              </div>
             </article>
           </div>
         </section>

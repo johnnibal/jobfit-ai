@@ -18,7 +18,8 @@ import {
 } from '@/lib/jobfitStorage'
 import { AppNav } from '@/components/nav/AppNav'
 import { getAnalysisQuotaCap } from '@/lib/analysisPermissions'
-import { isAnalysisSessionId, newClientAnalysisSessionId } from '@/lib/billing/analysisSession'
+import { LABEL_BUY_PRO_REPORT, LABEL_SUBSCRIBE_MONTHLY_PRO } from '@/lib/planTypes'
+import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { trackEvent } from '@/lib/analytics/track'
 
 const emptyBilling: SubscriptionBillingUi = {
@@ -388,6 +389,7 @@ export default function AnalyzePageClient() {
       let data: {
         message?: unknown
         error?: unknown
+        analysisId?: unknown
         code?: unknown
         quota?: { mode?: unknown }
       }
@@ -428,7 +430,14 @@ export default function AnalyzePageClient() {
         return
       }
 
-      const id = newClientAnalysisSessionId()
+      const serverIdRaw = typeof data.analysisId === 'string' ? data.analysisId.trim() : ''
+      if (!serverIdRaw || !isAnalysisSessionId(serverIdRaw)) {
+        trackEvent('analysis_completed', { ok: false })
+        setResult('Analysis completed without a server report id — please retry.')
+        return
+      }
+
+      const id = serverIdRaw
       trackEvent('analysis_completed', { ok: true })
 
       if (isSuccessfulFitAnalysisOutput(msg)) {
@@ -545,6 +554,7 @@ export default function AnalyzePageClient() {
         variant={upgradeModal.variant}
         onClose={() => setUpgradeModal((m) => ({ ...m, open: false }))}
         analysisId={analysisId}
+        subscriberMonthlyPro={billing.fetched && billing.monthlyProActive}
         proReportCreditsCount={entitlements.proReportCredits.length}
         onApplyProReportCredit={handleApplyProReportCredit}
         onUpgradeMonthly={() => handleSubscribeMonthly('conversion_modal')}
@@ -602,7 +612,9 @@ export default function AnalyzePageClient() {
             <div className="grid gap-6">
               {usageUi.status === 'ready' && !usageUi.canRun ? (
                 <div className="rounded-2xl border border-amber-400/35 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-100">
-                  No analyses remaining this period — upgrade with Monthly Pro or unlock a Pro Report for your results after you run when quota resets.
+                  You have no analyses left this period until quota resets — use{' '}
+                  <span className="font-semibold text-amber-50">{LABEL_BUY_PRO_REPORT}</span> for one paid run + full report,
+                  or <span className="font-semibold text-amber-50">{LABEL_SUBSCRIBE_MONTHLY_PRO}</span> if you apply often.
                 </div>
               ) : null}
 
@@ -682,6 +694,7 @@ export default function AnalyzePageClient() {
             <AnalysisInsightsPanel
               result={result}
               monthlyProActive={monthlyProActive}
+              subscriberMonthlyPro={billing.fetched && billing.monthlyProActive}
               analysisId={analysisId}
               fullyUnlockedAnalysisIds={mergedFullyUnlockedAnalysisIds}
               proReportCreditsCount={entitlements.proReportCredits.length}

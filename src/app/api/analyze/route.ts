@@ -1,9 +1,27 @@
 export const runtime = 'nodejs'
 
+import { randomUUID } from 'crypto'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { getAuthenticatedJobFitUserId } from '@/lib/auth/authenticatedUser'
+import {
+  attachProReportEntitlementTokenCookie,
+  clearProReportPendingCreditCookie,
+} from '@/lib/billing/applyPremiumCookies'
+import {
+  JOBFIT_PRO_REPORT_PENDING_CREDIT_COOKIE,
+  parseVerifiedProReportPendingCreditId,
+} from '@/lib/billing/proReportCreditCookie.server'
+import {
+  consumePendingProReportCreditAndUnlock,
+  loadConsumableProReportPendingCredit,
+} from '@/lib/billing/proReportPendingCredit.server'
+import { JOBFIT_PRO_REPORT_ENTITLEMENT_COOKIE } from '@/lib/billing/proReportEntitlementToken.server'
+import {
+  JOBFIT_MONTHLY_PRO_COOKIE,
+  verifyMonthlyProEntitlementCookie,
+} from '@/lib/billing/signedPremiumCookie'
 import {
   decrementAnalysisUsage,
   incrementAnalysisUsage,
@@ -11,10 +29,6 @@ import {
   resolveAnalysisQuotaSubject,
   usageLimitsDisabled,
 } from '@/lib/monetizationUsage.server'
-import {
-  JOBFIT_MONTHLY_PRO_COOKIE,
-  verifyMonthlyProEntitlementCookie,
-} from '@/lib/billing/signedPremiumCookie'
 import {
   JOBFIT_ANON_COOKIE,
   mintAnonymousSessionId,
@@ -156,6 +170,7 @@ export async function POST(req: Request) {
   }
 
   let quotaConsumed = false
+  let prepaidCreditRowId: string | null = null
 
   if (!usageLimitsDisabled()) {
     try {
@@ -163,19 +178,44 @@ export async function POST(req: Request) {
       quotaConsumed = true
     } catch (e) {
       if (e instanceof JobFitQuotaExceededError) {
-        return respond(
-          {
-            error: 'Analysis quota exceeded.',
-            code: e.code,
-            quota: { mode: e.mode, limit: e.limit, used: e.used, remaining: 0 },
-          },
-          429
-        )
+        const creditCookieRaw = jar.get(JOBFIT_PRO_REPORT_PENDING_CREDIT_COOKIE)?.value
+        const creditId = parseVerifiedProReportPendingCreditId(creditCookieRaw)
+        if (!creditId) {
+          return respond(
+            {
+              error: 'Analysis quota exceeded.',
+              code: e.code,
+              quota: { mode: e.mode, limit: e.limit, used: e.used, remaining: 0 },
+            },
+            429
+          )
+        }
+        const creditRow = await loadConsumableProReportPendingCredit({
+          creditIdFromCookie: creditId,
+          anonymousSessionId,
+        })
+        if (!creditRow) {
+          console.warn('[analyze] prepaid credit cookie present but not consumable', {
+            creditTail: creditId.slice(-8),
+          })
+          return respond(
+            {
+              error: 'Analysis quota exceeded.',
+              code: e.code,
+              quota: { mode: e.mode, limit: e.limit, used: e.used, remaining: 0 },
+            },
+            429
+          )
+        }
+        prepaidCreditRowId = creditRow.id
+      } else {
+        console.error('[analyze] quota increment', e)
+        return respond({ error: 'Could not verify usage quota.' }, 503)
       }
-      console.error('[analyze] quota increment', e)
-      return respond({ error: 'Could not verify usage quota.' }, 503)
     }
   }
+
+  const analysisId = randomUUID()
 
   const prompt = buildAnalysisPrompt(normalizedCv, normalizedJd)
 
@@ -205,10 +245,47 @@ export async function POST(req: Request) {
       if (quotaConsumed && !usageLimitsDisabled()) {
         await decrementAnalysisUsage(subject, mode).catch(() => {})
       }
-      return respond({ error: 'AI analysis returned an empty response.' }, 502)
+      return respond({ error: 'AI analysis returned an empty response.', analysisId }, 502)
     }
 
-    return respond({ message }, 200)
+    if (prepaidCreditRowId) {
+      try {
+        await consumePendingProReportCreditAndUnlock({
+          creditRowId: prepaidCreditRowId,
+          anonymousSessionId,
+          analysisId,
+        })
+      } catch (ce) {
+        console.error('[analyze] prepaid credit consume', ce instanceof Error ? ce.message : 'unknown')
+        if (quotaConsumed && !usageLimitsDisabled()) {
+          await decrementAnalysisUsage(subject, mode).catch(() => {})
+        }
+        return respond(
+          { error: 'Analysis completed but Pro unlock failed. Please retry or contact support.', analysisId },
+          500
+        )
+      }
+
+      const res = NextResponse.json({ message, analysisId }, { status: 200 })
+      applyAnonymousSessionCookie(res, signedAnon)
+      try {
+        attachProReportEntitlementTokenCookie(
+          res,
+          jar.get(JOBFIT_PRO_REPORT_ENTITLEMENT_COOKIE)?.value,
+          analysisId
+        )
+        clearProReportPendingCreditCookie(res)
+      } catch (cookieErr) {
+        console.error('[analyze] entitlement after prepaid', cookieErr instanceof Error ? cookieErr.message : 'unknown')
+        return respond(
+          { error: 'Unlock saved but browser cookies could not be updated. Use “claim” from account tools.', analysisId },
+          500
+        )
+      }
+      return res
+    }
+
+    return respond({ message, analysisId }, 200)
   } catch (error: unknown) {
     if (quotaConsumed && !usageLimitsDisabled()) {
       await decrementAnalysisUsage(subject, mode).catch(() => {})
@@ -220,6 +297,6 @@ export async function POST(req: Request) {
       console.error('Unknown error:', error)
     }
 
-    return respond({ error: 'OpenRouter AI analysis failed.' }, 500)
+    return respond({ error: 'OpenRouter AI analysis failed.', analysisId }, 500)
   }
 }

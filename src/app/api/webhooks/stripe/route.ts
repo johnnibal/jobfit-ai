@@ -10,6 +10,8 @@ import {
   upsertBillingAccountFromSubscription,
 } from '@/lib/billing/billingAccountSync'
 import { persistProReportUnlock } from '@/lib/billing/proReportUnlock'
+import { upsertProReportPendingCreditFromPaidSession } from '@/lib/billing/proReportPendingCredit.server'
+import { JOBFIT_STRIPE_PRO_REPORT_CREDIT } from '@/lib/billing/proReportStripeCheckoutFields'
 import { getStripe } from '@/lib/stripe'
 
 export async function POST(req: Request) {
@@ -45,6 +47,15 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session
 
         if (session.mode === 'payment' && session.payment_status === 'paid') {
+          const jobfitProductRaw = session.metadata?.jobfit_product
+          const jobfitProduct =
+            typeof jobfitProductRaw === 'string' ? jobfitProductRaw.trim().toLowerCase() : ''
+
+          if (jobfitProduct === JOBFIT_STRIPE_PRO_REPORT_CREDIT) {
+            await upsertProReportPendingCreditFromPaidSession(session)
+            break
+          }
+
           const analysisId = session.metadata?.analysisId ?? session.client_reference_id ?? ''
           if (analysisId && isAnalysisSessionId(analysisId)) {
             const sessionCustomer =
@@ -58,7 +69,9 @@ export async function POST(req: Request) {
                   : null
             await persistProReportUnlock(analysisId, session.id, sessionCustomer)
           } else {
-            console.warn('[webhook/stripe] Pro Report checkout missing analysisId', session.id)
+            console.warn('[webhook/stripe] Pro Report checkout missing analysisId', {
+              sessionTail: typeof session.id === 'string' ? session.id.slice(-12) : 'unknown',
+            })
           }
           break
         }

@@ -7,6 +7,7 @@ import { isAnalysisUnlocked } from '@/lib/billing/proReportUnlock'
 import { resolveProReportPromo } from '@/lib/billing/proReportPromos.server'
 import { getPublicAppUrl } from '@/lib/appUrl'
 import { getStripe } from '@/lib/stripe'
+import { buildProReportCheckoutStripeCoreFields } from '@/lib/billing/proReportStripeCheckoutFields'
 
 export async function POST(req: Request) {
   try {
@@ -40,25 +41,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 })
     }
 
-    const analysisId =
-      typeof body === 'object' && body !== null && 'analysisId' in body
-        ? (body as { analysisId?: unknown }).analysisId
-        : undefined
+    const rec = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
+    const rawAnalysisId =
+      typeof rec.analysisId === 'string' ? rec.analysisId.trim() : rec.analysisId == null ? '' : undefined
 
-    if (typeof analysisId !== 'string' || !isAnalysisSessionId(analysisId)) {
-      return NextResponse.json({ error: 'Valid analysisId (UUID v4) is required.' }, { status: 400 })
+    if (typeof rawAnalysisId === 'undefined') {
+      return NextResponse.json({ error: 'Invalid analysisId field.' }, { status: 400 })
     }
 
-    const already = await isAnalysisUnlocked(analysisId)
-    if (already) {
-      return NextResponse.json(
-        { error: 'This analysis already has Pro Report unlocked.', code: 'ALREADY_UNLOCKED' },
-        { status: 409 }
-      )
+    const hasAnalysisId = rawAnalysisId.length > 0
+    const analysisId = hasAnalysisId ? rawAnalysisId : null
+
+    if (hasAnalysisId && !isAnalysisSessionId(rawAnalysisId)) {
+      return NextResponse.json({ error: 'Valid analysisId (UUID v4) is required when provided.' }, { status: 400 })
     }
 
-    const promoCodeRaw =
-      typeof body === 'object' && body !== null && 'promoCode' in body ? (body as { promoCode?: unknown }).promoCode : ''
+    if (hasAnalysisId && analysisId) {
+      const already = await isAnalysisUnlocked(analysisId)
+      if (already) {
+        return NextResponse.json(
+          { error: 'This analysis already has Pro Report unlocked.', code: 'ALREADY_UNLOCKED' },
+          { status: 409 }
+        )
+      }
+    }
+
+    const promoCodeRaw = typeof rec.promoCode === 'string' ? rec.promoCode : ''
 
     let discounts: undefined | [{ coupon: string }]
     let metadataPromo = ''
@@ -78,13 +86,18 @@ export async function POST(req: Request) {
       metadataPromo = promo.canonicalCode
     }
 
+    const core = buildProReportCheckoutStripeCoreFields(analysisId)
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [{ price: priceId.trim(), quantity: 1 }],
       success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/checkout/cancel`,
-      client_reference_id: analysisId,
-      metadata: { analysisId, promoCode: metadataPromo },
+      ...(core.client_reference_id ? { client_reference_id: core.client_reference_id } : {}),
+      metadata: {
+        ...core.metadataBaseline,
+        promoCode: metadataPromo,
+      },
       ...(discounts ? { discounts } : {}),
     })
 
@@ -94,7 +107,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url })
   } catch (e) {
-    console.error('[checkout/pro-report]', e)
+    console.error('[checkout/pro-report]', e instanceof Error ? e.message : 'unknown_error')
     return NextResponse.json({ error: 'Unable to start checkout. Try again shortly.' }, { status: 500 })
   }
 }

@@ -1,3 +1,8 @@
+import {
+  JOBFIT_PRO_REPORT_PENDING_CREDIT_COOKIE,
+  mintProReportPendingCreditCookieValue,
+  proReportPendingCreditCookieAttrs,
+} from '@/lib/billing/proReportCreditCookie.server'
 import type { NextResponse } from 'next/server'
 import {
   appendProReportEntitlementCookie,
@@ -32,6 +37,25 @@ export function attachProReportEntitlementTokenCookie(
   } catch (e) {
     throw new Error(`Could not mint Pro Report entitlement cookie: ${e instanceof Error ? e.message : String(e)}`)
   }
+}
+
+export function attachProReportPendingCreditCookie(res: NextResponse, creditId: string): void {
+  try {
+    res.cookies.set(
+      JOBFIT_PRO_REPORT_PENDING_CREDIT_COOKIE,
+      mintProReportPendingCreditCookieValue(creditId),
+      proReportPendingCreditCookieAttrs()
+    )
+  } catch (e) {
+    throw new Error(`Could not mint Pro Report pending credit cookie: ${e instanceof Error ? e.message : String(e)}`)
+  }
+}
+
+export function clearProReportPendingCreditCookie(res: NextResponse): void {
+  res.cookies.set(JOBFIT_PRO_REPORT_PENDING_CREDIT_COOKIE, '', {
+    ...proReportPendingCreditCookieAttrs(),
+    maxAge: 0,
+  })
 }
 
 export { premiumCookieAttrs } from '@/lib/billing/signedPremiumCookie'

@@ -16,11 +16,18 @@ import {
   type AnalysisPermissionContext,
 } from '@/lib/analysisPermissions'
 import {
+  COPY_INSIGHTS_EMPTY_PAID_PRO_RUN,
+  COPY_FREE_TIER_PRIMARY_LINE,
+  COPY_MONTHLY_PRO_INCLUDES_LONG,
+  COPY_MONTHLY_PRO_TAGLINE,
+  COPY_PRO_REPORT_INCLUDES,
+  COPY_PRO_REPORT_ONELINE,
+  FREE_VISIBLE_SUGGESTION_COUNT,
+  LABEL_BUY_PRO_REPORT,
+  LABEL_SUBSCRIBE_MONTHLY_PRO,
+  LABEL_UNLOCK_PRO_REPORT,
   PRICE_MONTHLY_PRO_EUR,
   PRICE_PRO_REPORT_EUR,
-  FREE_VISIBLE_SUGGESTION_COUNT,
-  MONTHLY_PRO_ANALYSES_PER_MONTH,
-  UNLOCK_PRO_REPORT_CTA_LABEL,
 } from '@/lib/planTypes'
 import {
   COVER_LETTER_LANGUAGES,
@@ -35,8 +42,10 @@ import { trackEvent } from '@/lib/analytics/track'
 
 const SHORT_SUMMARY_MAX_CHARS = 320
 
-/** Shown when Pro Report checkout is attempted without a completed analysis session id. */
-const MISSING_ANALYSIS_UNLOCK_MSG = 'Run an analysis first to unlock a Pro Report.'
+/** When demo credits are present but cannot apply without this device’s analysis id. */
+const MISSING_ANALYSIS_UNLOCK_MSG = 'Run an analysis first to apply a demo Pro Report credit.'
+const PREPAID_PRO_REPORT_BROWSER_HINT =
+  'Buy once on this browser — your next successful analyzer run unlocks that result as full Pro Report automatically.'
 
 function ProReportMonthlyComparison() {
   return (
@@ -45,23 +54,15 @@ function ProReportMonthlyComparison() {
         <p className="text-sm font-semibold text-violet-50">
           Pro Report · €{PRICE_PRO_REPORT_EUR} one-time
         </p>
-        <ul className="mt-3 space-y-1.5 text-xs leading-relaxed text-slate-400">
-          <li>Unlocks this one application report</li>
-          <li>Full suggestions</li>
-          <li>ATS checklist</li>
-          <li>Cover letter</li>
-          <li>PDF export</li>
-        </ul>
+        <p className="mt-2 text-xs leading-relaxed text-slate-500">{COPY_PRO_REPORT_ONELINE}</p>
+        <p className="mt-2 text-[11px] leading-relaxed text-slate-500">{COPY_PRO_REPORT_INCLUDES}</p>
       </div>
       <div className="rounded-2xl border border-cyan-400/30 bg-cyan-500/[0.06] p-4">
         <p className="text-sm font-semibold text-cyan-50">
           Monthly Pro · €{PRICE_MONTHLY_PRO_EUR}/month
         </p>
-        <ul className="mt-3 space-y-1.5 text-xs leading-relaxed text-slate-400">
-          <li>More analyses</li>
-          <li>Saved reports</li>
-          <li>Best for active job seekers</li>
-        </ul>
+        <p className="mt-2 text-[13px] font-medium leading-relaxed text-cyan-200/90">{COPY_MONTHLY_PRO_TAGLINE}</p>
+        <p className="mt-2 text-xs leading-relaxed text-slate-500">{COPY_MONTHLY_PRO_INCLUDES_LONG}</p>
       </div>
     </div>
   )
@@ -131,6 +132,7 @@ function lockedPreviewCardFeature(title: string): string {
 }
 
 function UnlockProReportCta({
+  subscriberMonthlyPro,
   analysisId,
   proReportCreditsCount,
   onApplyProReportCredit,
@@ -139,6 +141,8 @@ function UnlockProReportCta({
   fullWidth,
   emphasize,
 }: {
+  /** Active Stripe Monthly Pro billing session — omit Pro Report one-time SKU. */
+  subscriberMonthlyPro: boolean
   analysisId: string | null
   proReportCreditsCount: number
   onApplyProReportCredit: () => void
@@ -152,37 +156,44 @@ function UnlockProReportCta({
   const [stripeErr, setStripeErr] = useState<string | null>(null)
   const [appliedPromo, setAppliedPromo] = useState<AppliedProPromo | null>(null)
   const billingSandboxVisible = useBillingSandboxEnvironment()
+  const sandboxDemoCredits = billingSandboxVisible ? proReportCreditsCount : 0
 
   useEffect(() => {
     setAppliedPromo(null)
   }, [analysisId])
+
+  if (subscriberMonthlyPro) return null
 
   const scrollToSandbox = () => {
     document.getElementById('jobfit-billing-sandbox')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }
 
   const handleClick = async () => {
-    if (!analysisId) {
+    if (!analysisId && sandboxDemoCredits > 0) {
       setStripeErr(MISSING_ANALYSIS_UNLOCK_MSG)
       return
     }
-    if (analysisId && proReportCreditsCount > 0) {
+    if (analysisId && sandboxDemoCredits > 0) {
       onApplyProReportCredit()
       return
     }
 
+    const body: Record<string, unknown> = {}
+    if (analysisId) body.analysisId = analysisId
+    if (appliedPromo) body.promoCode = appliedPromo.code
+
     setStripeErr(null)
     setStripeBusy(true)
     try {
-      trackEvent('stripe_checkout_started', { product: 'pro_report', surface: checkoutSurface })
+      trackEvent('stripe_checkout_started', {
+        product: analysisId ? 'pro_report' : 'pro_report_credit',
+        surface: checkoutSurface,
+      })
       const res = await fetch('/api/checkout/pro-report', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          analysisId,
-          ...(appliedPromo ? { promoCode: appliedPromo.code } : {}),
-        }),
+        body: JSON.stringify(body),
       })
 
       const data: { url?: unknown; error?: unknown; fallbackDemo?: unknown } = await res.json()
@@ -226,7 +237,9 @@ function UnlockProReportCta({
   }
 
   const readyHint =
-    analysisId && proReportCreditsCount > 0 ? 'Demo: you have a credit — applies instantly.' : null
+    billingSandboxVisible && analysisId && sandboxDemoCredits > 0
+      ? 'Sandbox: demo credit applies instantly.'
+      : null
 
   const base =
     variant === 'primary'
@@ -240,17 +253,26 @@ function UnlockProReportCta({
   const buttonLabel =
     stripeBusy
       ? 'Opening checkout…'
-      : analysisId && proReportCreditsCount > 0
+      : sandboxDemoCredits > 0 && analysisId
         ? 'Apply demo credit'
         : appliedPromo
-          ? `Unlock Pro Report · €${appliedPromo.discountedEur.toFixed(2)}`
-          : UNLOCK_PRO_REPORT_CTA_LABEL
+          ? analysisId
+            ? `Unlock Pro Report · €${appliedPromo.discountedEur.toFixed(2)}`
+            : `Buy Pro Report · €${appliedPromo.discountedEur.toFixed(2)}`
+          : analysisId
+            ? LABEL_UNLOCK_PRO_REPORT
+            : LABEL_BUY_PRO_REPORT
 
   return (
     <div className={fullWidth ? 'w-full' : ''}>
-      {analysisId && proReportCreditsCount === 0 ? (
+      {sandboxDemoCredits === 0 ? (
         <div className="mb-3">
-          <ProReportPromoBox key={analysisId} compact disabled={!analysisId || stripeBusy} onApplied={setAppliedPromo} />
+          <ProReportPromoBox
+            key={analysisId ?? 'prepaid_credit'}
+            compact
+            disabled={stripeBusy}
+            onApplied={setAppliedPromo}
+          />
           {appliedPromo ? (
             <p className="mt-2 text-center text-[10px] text-slate-500">
               <span className="line-through opacity-70">€{appliedPromo.originalEur.toFixed(2)}</span>{' '}
@@ -263,18 +285,21 @@ function UnlockProReportCta({
       ) : null}
       <button
         type="button"
+        disabled={stripeBusy}
         onClick={() => void handleClick()}
         className={`inline-flex w-full items-center justify-center rounded-full border text-center font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${sizeClass} ${base}`}
         title={
-          !analysisId
+          sandboxDemoCredits > 0 && !analysisId
             ? MISSING_ANALYSIS_UNLOCK_MSG
-            : proReportCreditsCount > 0
-              ? 'Apply your Pro Report demo credit.'
-              : stripeBusy
-                ? 'Starting Stripe Checkout…'
-                : appliedPromo
-                  ? `Stripe Checkout · discounted total €${appliedPromo.discountedEur.toFixed(2)}`
-                  : 'Pay securely with Stripe (€4.99 one-time).'
+            : analysisId && sandboxDemoCredits > 0
+              ? 'Apply sandbox demo credit (local-only).'
+              : !analysisId
+                ? `Prepaid credit — ${PREPAID_PRO_REPORT_BROWSER_HINT}`
+                : stripeBusy
+                  ? 'Starting Stripe Checkout…'
+                  : appliedPromo
+                    ? `Stripe Checkout · discounted €${appliedPromo.discountedEur.toFixed(2)}`
+                    : 'Pay securely with Stripe (€4.99 one-time).'
         }
       >
         {buttonLabel}
@@ -283,7 +308,7 @@ function UnlockProReportCta({
       {stripeErr ? (
         <p className="mt-2 text-center text-[12px] leading-relaxed text-amber-200/95">{stripeErr}</p>
       ) : !analysisId ? (
-        <p className="mt-2 text-center text-sm leading-snug text-slate-300">{MISSING_ANALYSIS_UNLOCK_MSG}</p>
+        <p className="mt-2 text-center text-sm leading-snug text-slate-300">{PREPAID_PRO_REPORT_BROWSER_HINT}</p>
       ) : null}
     </div>
   )
@@ -355,6 +380,8 @@ export type SubscriptionBillingUi = {
 export type AnalysisInsightsPanelProps = {
   result: string | null
   monthlyProActive: boolean
+  /** Stripe subscription verified on this billing session — hide Pro Report one-time CTAs only (not demo entitlements). */
+  subscriberMonthlyPro: boolean
   analysisId: string | null
   fullyUnlockedAnalysisIds: string[]
   proReportCreditsCount: number
@@ -388,6 +415,7 @@ export type AnalysisInsightsPanelProps = {
 export function AnalysisInsightsPanel({
   result,
   monthlyProActive,
+  subscriberMonthlyPro,
   analysisId,
   fullyUnlockedAnalysisIds,
   proReportCreditsCount,
@@ -707,7 +735,7 @@ export function AnalysisInsightsPanel({
           <span className="rounded-full border border-slate-700 bg-slate-950/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">
             {permissionBadge}
           </span>
-          {proReportCreditsCount > 0 ? (
+          {billingSandboxVisible && proReportCreditsCount > 0 ? (
             <span className="rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-[11px] font-semibold text-violet-100">
               Pro credits · {proReportCreditsCount}
             </span>
@@ -716,18 +744,21 @@ export function AnalysisInsightsPanel({
       </div>
 
       <p className="mt-3 text-sm leading-relaxed text-slate-400">
-        You always keep your score and an honest preview on Free.{' '}
-        <span className="text-slate-300">Pro Report (€{PRICE_PRO_REPORT_EUR})</span> unlocks the full breakdown for one
-        application. <span className="text-slate-300">Monthly Pro (€{PRICE_MONTHLY_PRO_EUR}/mo)</span> adds{' '}
-        {MONTHLY_PRO_ANALYSES_PER_MONTH} analyses per UTC month, saved reports, and subscriber tooling via Stripe.
+        <span className="font-semibold text-slate-200">Free</span>: {COPY_FREE_TIER_PRIMARY_LINE}.{' '}
+        <span className="font-semibold text-violet-200/90">Pro Report</span> (€{PRICE_PRO_REPORT_EUR} one-time):{' '}
+        {COPY_PRO_REPORT_ONELINE.toLowerCase()} — {COPY_PRO_REPORT_INCLUDES.toLowerCase()}
+        {' · '}
+        <span className="font-semibold text-cyan-200/90">Monthly Pro</span> ({COPY_MONTHLY_PRO_TAGLINE.toLowerCase()}; €
+        {PRICE_MONTHLY_PRO_EUR}/mo): {COPY_MONTHLY_PRO_INCLUDES_LONG.toLowerCase()}.
       </p>
 
-      {result && gatedFree ? (
+      {result && gatedFree && !subscriberMonthlyPro ? (
         <div className="mt-5">
           <UnlockProReportCta
             emphasize
             fullWidth
             checkoutSurface="insights_after_explanation"
+            subscriberMonthlyPro={subscriberMonthlyPro}
             analysisId={analysisId}
             proReportCreditsCount={proReportCreditsCount}
             onApplyProReportCredit={onApplyProReportCredit}
@@ -755,6 +786,7 @@ export function AnalysisInsightsPanel({
               emphasize
               fullWidth
               checkoutSurface="insights_billing_compare"
+              subscriberMonthlyPro={subscriberMonthlyPro}
               analysisId={analysisId}
               proReportCreditsCount={proReportCreditsCount}
               onApplyProReportCredit={onApplyProReportCredit}
@@ -796,14 +828,16 @@ export function AnalysisInsightsPanel({
           </div>
         ) : null}
         <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={subscribeMonthlyBusy}
-            onClick={onSubscribeMonthly}
-            className="rounded-full border border-cyan-400/35 bg-cyan-500/10 px-4 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/15 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            {subscribeMonthlyBusy ? 'Opening Checkout…' : `Subscribe Monthly Pro · €${PRICE_MONTHLY_PRO_EUR}/mo`}
-          </button>
+          {!billing.monthlyProActive ? (
+            <button
+              type="button"
+              disabled={subscribeMonthlyBusy}
+              onClick={onSubscribeMonthly}
+              className="rounded-full border border-cyan-400/35 bg-cyan-500/10 px-4 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/15 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              {subscribeMonthlyBusy ? 'Opening Checkout…' : LABEL_SUBSCRIBE_MONTHLY_PRO}
+            </button>
+          ) : null}
           {billing.subscriptionStatus !== 'none' ? (
             <button
               type="button"
@@ -844,7 +878,7 @@ export function AnalysisInsightsPanel({
           <p className="mt-2 text-xs leading-relaxed text-slate-500">
             {quotaPeriod === 'month'
               ? `Monthly Pro includes ${quotaCap} analyses per UTC calendar month — enforced on the server so refreshing won't bypass it.`
-              : `Free tier includes ${quotaCap} analysis per UTC day — enforced on the server (HTTP-only session cookie). Buying Pro Report unlocks full detail for that run only; it does not add extra analyses.`}
+              : `Free: ${COPY_FREE_TIER_PRIMARY_LINE}. Buying Pro Report (€${PRICE_PRO_REPORT_EUR}) pays for ${COPY_PRO_REPORT_ONELINE.toLowerCase()} ; Monthly Pro (${COPY_MONTHLY_PRO_TAGLINE.toLowerCase()}) adds recurring quota.`}
           </p>
         )}
       </div>
@@ -854,6 +888,23 @@ export function AnalysisInsightsPanel({
           <div className="mt-6">{emptyStateOverride}</div>
         ) : (
           <div className="mt-6 grid gap-4">
+            {!subscriberMonthlyPro ? (
+              <div className="rounded-2xl border border-violet-400/35 bg-gradient-to-br from-violet-500/12 via-slate-950/80 to-slate-950/70 p-5">
+                <p className="text-sm font-semibold text-violet-100">{COPY_INSIGHTS_EMPTY_PAID_PRO_RUN}</p>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">{COPY_PRO_REPORT_INCLUDES}</p>
+                <div className="mt-4">
+                  <UnlockProReportCta
+                    emphasize
+                    fullWidth
+                    subscriberMonthlyPro={subscriberMonthlyPro}
+                    checkoutSurface="insights_empty_prepaid_card"
+                    analysisId={analysisId}
+                    proReportCreditsCount={proReportCreditsCount}
+                    onApplyProReportCredit={onApplyProReportCredit}
+                  />
+                </div>
+              </div>
+            ) : null}
             <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
               <div className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">Fit score</div>
               <p className="mt-2 text-sm leading-7 text-slate-400">
@@ -901,14 +952,14 @@ export function AnalysisInsightsPanel({
             ) : null}
           </div>
 
-          {gatedFree ? (
+          {gatedFree && !subscriberMonthlyPro ? (
             <div className="rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/10 via-slate-900/60 to-cyan-500/5 p-4 sm:p-5">
               <div className="flex flex-col gap-4">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-violet-100">See everything recruiters scrutinize next</p>
                   <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                    One-time Pro Report for this posting — full CV report, ATS checklist, cover letter, and PDF export for
-                    €{PRICE_PRO_REPORT_EUR}.
+                    {LABEL_UNLOCK_PRO_REPORT} for this analyzer result — {COPY_PRO_REPORT_ONELINE.toLowerCase()}.{' '}
+                    {COPY_PRO_REPORT_INCLUDES}.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
                     <Link
@@ -928,6 +979,7 @@ export function AnalysisInsightsPanel({
                 <UnlockProReportCta
                   emphasize
                   fullWidth
+                  subscriberMonthlyPro={subscriberMonthlyPro}
                   analysisId={analysisId}
                   proReportCreditsCount={proReportCreditsCount}
                   onApplyProReportCredit={onApplyProReportCredit}
@@ -988,6 +1040,7 @@ export function AnalysisInsightsPanel({
                 <UnlockProReportCta
                   emphasize
                   fullWidth
+                  subscriberMonthlyPro={subscriberMonthlyPro}
                   analysisId={analysisId}
                   proReportCreditsCount={proReportCreditsCount}
                   onApplyProReportCredit={onApplyProReportCredit}
@@ -1041,6 +1094,7 @@ export function AnalysisInsightsPanel({
                   <UnlockProReportCta
                     emphasize
                     fullWidth
+                    subscriberMonthlyPro={subscriberMonthlyPro}
                     analysisId={analysisId}
                     proReportCreditsCount={proReportCreditsCount}
                     onApplyProReportCredit={onApplyProReportCredit}
@@ -1206,12 +1260,13 @@ export function AnalysisInsightsPanel({
           {gatedFree ? (
             <>
               <div>
-                <SectionHeading>Included with Pro Report</SectionHeading>
+                <SectionHeading>Included with Monthly Pro · or one-time Pro Report</SectionHeading>
                 <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                  Free analysis is complete — these items stay locked until you unlock with{' '}
-                  <span className="text-slate-300">{UNLOCK_PRO_REPORT_CTA_LABEL}</span> (Stripe).
+                  Free analysis is complete — these previews stay blurred until{' '}
+                  <span className="text-slate-300">{LABEL_UNLOCK_PRO_REPORT}</span> ({COPY_PRO_REPORT_ONELINE}).{' '}
+                  With Monthly Pro, the same tooling is bundled on every analysis.
                   {billingSandboxVisible ? (
-                    <span> Optional demo tools are at the bottom of this panel when testing locally.</span>
+                    <span> Optional sandbox demo tools remain at the bottom of this panel for local-only testing.</span>
                   ) : null}
                 </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-1">
@@ -1229,6 +1284,7 @@ export function AnalysisInsightsPanel({
                 <div className="mt-6">
                   <UnlockProReportCta
                     emphasize
+                    subscriberMonthlyPro={subscriberMonthlyPro}
                     analysisId={analysisId}
                     proReportCreditsCount={proReportCreditsCount}
                     onApplyProReportCredit={onApplyProReportCredit}
@@ -1247,6 +1303,7 @@ export function AnalysisInsightsPanel({
                 <div className="mx-auto mt-4 max-w-md">
                   <UnlockProReportCta
                     emphasize
+                    subscriberMonthlyPro={subscriberMonthlyPro}
                     analysisId={analysisId}
                     proReportCreditsCount={proReportCreditsCount}
                     onApplyProReportCredit={onApplyProReportCredit}
@@ -1449,6 +1506,7 @@ export function AnalysisInsightsPanel({
                 <UnlockProReportCta
                   emphasize
                   fullWidth
+                  subscriberMonthlyPro={subscriberMonthlyPro}
                   analysisId={analysisId}
                   proReportCreditsCount={proReportCreditsCount}
                   onApplyProReportCredit={onApplyProReportCredit}

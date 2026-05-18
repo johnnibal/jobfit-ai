@@ -3,12 +3,24 @@ export const dynamic = 'force-dynamic'
 
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { attachMonthlyProBillingCookie, attachProReportEntitlementTokenCookie } from '@/lib/billing/applyPremiumCookies'
+import {
+  attachMonthlyProBillingCookie,
+  attachProReportEntitlementTokenCookie,
+  attachProReportPendingCreditCookie,
+} from '@/lib/billing/applyPremiumCookies'
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { JOBFIT_PRO_REPORT_ENTITLEMENT_COOKIE } from '@/lib/billing/proReportEntitlementToken.server'
+import { ensurePendingCreditBoundToAnonymousSession } from '@/lib/billing/proReportPendingCredit.server'
 import { upsertBillingAccountFromSubscription } from '@/lib/billing/billingAccountSync'
 import { persistProReportUnlock } from '@/lib/billing/proReportUnlock'
 import { getStripe } from '@/lib/stripe'
+import {
+  JOBFIT_ANON_COOKIE,
+  mintAnonymousSessionId,
+  signAnonymousSessionId,
+  verifyAnonymousCookie,
+} from '@/lib/usage/anonymousCookie'
+import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
 
 /**
  * Verify Checkout Session server-side (never trust the client alone).
@@ -29,9 +41,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'session_id is required.' }, { status: 400 })
   }
 
+  const trimmedSessionId = sessionId.trim()
   let session
   try {
-    session = await stripe.checkout.sessions.retrieve(sessionId.trim())
+    session = await stripe.checkout.sessions.retrieve(trimmedSessionId)
   } catch {
     return NextResponse.json({ error: 'Could not retrieve checkout session.' }, { status: 400 })
   }
@@ -40,13 +53,83 @@ export async function GET(req: Request) {
 
   if (session.mode === 'payment') {
     if (session.payment_status !== 'paid') {
-      return NextResponse.json({ error: 'Payment not completed.' }, { status: 400 })
+      return NextResponse.json(
+        {
+          error:
+            'Stripe still marks this checkout as unpaid. If you were just redirected from payment, wait a few seconds—we will retry from this screen. Otherwise open the Stripe receipt link again.',
+          code: 'STRIPE_PAYMENT_PENDING' as const,
+        },
+        { status: 409 }
+      )
+    }
+
+    const jobfitProductRaw = session.metadata?.jobfit_product
+    const jobfitProduct = typeof jobfitProductRaw === 'string' ? jobfitProductRaw.trim().toLowerCase() : ''
+
+    if (jobfitProduct === 'pro_report_credit') {
+      console.info('[confirm-session]', {
+        stripeSessionTail: trimmedSessionId.slice(-12),
+        jobfit_product: jobfitProduct,
+        paid: session.payment_status === 'paid',
+      })
+      const anonVerified = verifyAnonymousCookie(jar.get(JOBFIT_ANON_COOKIE)?.value)
+      let signedAnon: string | null = null
+      const anonymousSessionId = anonVerified ?? mintAnonymousSessionId()
+      if (!anonVerified) {
+        signedAnon = signAnonymousSessionId(anonymousSessionId)
+      }
+
+      const bound = await ensurePendingCreditBoundToAnonymousSession({
+        session,
+        anonymousSessionId,
+      })
+
+      if (!bound) {
+        console.warn('[confirm-session] prepaid credit binding failed')
+        return NextResponse.json(
+          {
+            error:
+              'This Pro Report credit is already tied to another browser session, already used for an analysis, or could not bind to this anonymous session—complete checkout in the same browser, or contact support with your Stripe receipt URL.',
+            code: 'PRO_REPORT_CREDIT_BIND_FAILED' as const,
+          },
+          { status: 409 }
+        )
+      }
+
+      const res = NextResponse.json({
+        ok: true,
+        type: 'pro_report_credit' as const,
+      })
+
+      applyAnonymousSessionCookie(res, signedAnon)
+      try {
+        attachProReportPendingCreditCookie(res, bound.creditId)
+      } catch (e) {
+        console.error('[confirm-session] pending credit cookie', e)
+        return NextResponse.json(
+          { error: 'Could not issue secure prepaid credit cookie. Check server configuration.' },
+          { status: 503 }
+        )
+      }
+      return res
     }
 
     const analysisId = session.metadata?.analysisId ?? session.client_reference_id ?? ''
     if (!analysisId || !isAnalysisSessionId(analysisId)) {
-      return NextResponse.json({ error: 'Invalid session metadata.' }, { status: 400 })
+      return NextResponse.json(
+        {
+          error:
+            'This checkout session is missing analyzer metadata (expected unlock for one result). If you bought prepaid Pro Report credit, return from the Buy Pro Report checkout flow so confirmation lands on analysis setup. Otherwise contact support.',
+        },
+        { status: 400 }
+      )
     }
+
+    console.info('[confirm-session]', {
+      stripeSessionTail: trimmedSessionId.slice(-12),
+      jobfit_product: jobfitProduct || '(single unlock)',
+      analysisTail: analysisId.slice(-8),
+    })
 
     try {
       const sessionCustomer =

@@ -3,13 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { AppNav } from '@/components/nav/AppNav'
-import {
-  demoGrantProReportCredit,
-  demoSetMonthlyPro,
-  defaultEntitlements,
-  readEntitlements,
-  writeEntitlements,
-} from '@/lib/jobfitStorage'
+import { demoGrantProReportCredit, demoSetMonthlyPro, defaultEntitlements, readEntitlements, writeEntitlements } from '@/lib/jobfitStorage'
+import { useBillingSandboxEnvironment } from '@/lib/billing/useBillingSandboxEnvironment'
 
 type ReportRow = {
   analysisId: string
@@ -30,6 +25,7 @@ export default function DashboardReportsClient() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null)
+  const billingSandboxVisible = useBillingSandboxEnvironment()
 
   useEffect(() => {
     setEntitlements(readEntitlements())
@@ -235,37 +231,39 @@ export default function DashboardReportsClient() {
               )}
             </div>
 
-            <div className="mt-8 rounded-2xl border border-dashed border-slate-700/90 bg-slate-950/40 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Billing sandbox</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setEntitlements((prev) => {
-                      const next = demoGrantProReportCredit(prev)
-                      writeEntitlements(next)
-                      return next
-                    })
-                  }
-                  className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:border-violet-400/35"
-                >
-                  Simulate Pro Report (+1 credit)
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setEntitlements((prev) => {
-                      const next = demoSetMonthlyPro(prev, !prev.monthlyProActive)
-                      writeEntitlements(next)
-                      return next
-                    })
-                  }
-                  className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:border-cyan-400/35"
-                >
-                  Toggle Monthly Pro demo
-                </button>
+            {billingSandboxVisible ? (
+              <div className="mt-8 rounded-2xl border border-dashed border-slate-700/90 bg-slate-950/40 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Billing sandbox</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEntitlements((prev) => {
+                        const next = demoGrantProReportCredit(prev)
+                        writeEntitlements(next)
+                        return next
+                      })
+                    }
+                    className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:border-violet-400/35"
+                  >
+                    Simulate Pro Report (+1 credit)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEntitlements((prev) => {
+                        const next = demoSetMonthlyPro(prev, !prev.monthlyProActive)
+                        writeEntitlements(next)
+                        return next
+                      })
+                    }
+                    className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:border-cyan-400/35"
+                  >
+                    Toggle Monthly Pro demo
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : null}
           </>
         ) : null}
       </div>

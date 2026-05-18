@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 function normalizeCustomerId(raw: string | null | undefined): string | null {
@@ -6,14 +7,15 @@ function normalizeCustomerId(raw: string | null | undefined): string | null {
   return t.startsWith('cus_') ? t : null
 }
 
-export async function persistProReportUnlock(
+export async function persistProReportUnlockInTransaction(
+  tx: Prisma.TransactionClient,
   analysisId: string,
   stripeCheckoutSessionId: string,
   stripeCustomerId?: string | null
 ): Promise<void> {
   const cid = normalizeCustomerId(stripeCustomerId ?? undefined)
 
-  await prisma.proReportUnlock.upsert({
+  await tx.proReportUnlock.upsert({
     where: { analysisId },
     create: {
       analysisId,
@@ -24,6 +26,16 @@ export async function persistProReportUnlock(
       stripeCheckoutSessionId,
       ...(cid ? { stripeCustomerId: cid } : {}),
     },
+  })
+}
+
+export async function persistProReportUnlock(
+  analysisId: string,
+  stripeCheckoutSessionId: string,
+  stripeCustomerId?: string | null
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await persistProReportUnlockInTransaction(tx, analysisId, stripeCheckoutSessionId, stripeCustomerId)
   })
 }
 

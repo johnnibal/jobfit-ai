@@ -39,7 +39,14 @@ export async function POST(req: Request) {
       select: { id: true },
     })
     if (!unlock) {
-      return NextResponse.json({ error: 'Analysis is not unlocked.' }, { status: 403 })
+      return NextResponse.json(
+        {
+          error:
+            'This analyzer result does not show a paid unlock yet—wait a minute, open your checkout confirmation page again (/checkout/success?session_id=…), or reload this page so we can mint your secure cookie while Stripe finishes.',
+          code: 'unlock_not_visible',
+        },
+        { status: 403 }
+      )
     }
 
     const jar = await cookies()

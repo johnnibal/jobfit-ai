@@ -20,6 +20,21 @@ model ProReportUnlock {
   @@map("pro_report_unlocks")
 }
 
+/// One-time “paid analysis + Pro Report” credit before `analysisId` exists (Stripe `metadata.jobfit_product = pro_report_credit`).
+model ProReportPendingCredit {
+  id                      String    @id @default(cuid())
+  stripeCheckoutSessionId String    @unique @map("stripe_checkout_session_id")
+  stripeCustomerId        String?   @map("stripe_customer_id")
+  /// Bound server-side when /confirm-session runs in purchaser’s browser (same anonymous session cookie may consume via /api/analyze).
+  anonymousSessionId      String?   @map("anonymous_session_id")
+  consumedAt              DateTime? @map("consumed_at")
+  consumedAnalysisId      String?   @map("consumed_analysis_id")
+  createdAt               DateTime  @default(now()) @map("created_at")
+
+  @@index([anonymousSessionId])
+  @@map("pro_report_pending_credits")
+}
+
 model SavedReport {
   id               String   @id @default(cuid())
   analysisId       String   @unique @map("analysis_id")

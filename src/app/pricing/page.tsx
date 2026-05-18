@@ -3,11 +3,17 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { TestimonialsSection } from '@/components/marketing/TestimonialsSection'
 import {
-  FREE_ANALYSES_PER_DAY,
-  MONTHLY_PRO_ANALYSES_PER_MONTH,
+  COPY_FREE_TIER_PRIMARY_LINE,
+  COPY_MONTHLY_PRO_INCLUDES_LONG,
+  COPY_MONTHLY_PRO_TAGLINE,
+  COPY_PRO_REPORT_INCLUDES,
+  COPY_PRO_REPORT_ONELINE,
+  LABEL_BUY_PRO_REPORT,
+  LABEL_SUBSCRIBE_MONTHLY_PRO,
   PRICE_MONTHLY_PRO_EUR,
   PRICE_PRO_REPORT_EUR,
 } from '@/lib/planTypes'
+import { MonthlyProCheckoutButton, ProReportCheckoutButton } from '@/components/billing/PlanStripeCheckoutButtons'
 
 export const metadata: Metadata = {
   title: 'Pricing — JobFit AI',
@@ -91,8 +97,10 @@ export default function PricingPage() {
               </span>
             </h1>
             <p className="mt-5 max-w-2xl text-pretty text-lg leading-relaxed text-slate-400 lg:mt-4 lg:text-base lg:leading-relaxed">
-              Start free, unlock a full Pro Report for one role, or subscribe to Monthly Pro when you are applying often.
-              Checkout is secured with Stripe — pay only when you upgrade.
+              <span className="text-slate-300">Free</span> ({COPY_FREE_TIER_PRIMARY_LINE}) ·{' '}
+              <span className="text-violet-200/90">Pro Report</span> ({COPY_PRO_REPORT_ONELINE.toLowerCase()}) ·{' '}
+              <span className="text-cyan-200/85">Monthly Pro</span> ({COPY_MONTHLY_PRO_TAGLINE.toLowerCase()}). Checkout runs
+              on Stripe — you pay only when you upgrade.
             </p>
           </div>
 
@@ -108,13 +116,10 @@ export default function PricingPage() {
               <p className="mt-2 text-sm text-slate-500 lg:text-xs">Always available · no card required</p>
             </div>
             <ul className="flex flex-1 flex-col gap-3 lg:gap-2">
-              <FeatureItem>
-                {FREE_ANALYSES_PER_DAY} CV/job analysis per day
-              </FeatureItem>
-              <FeatureItem>Fit score</FeatureItem>
-              <FeatureItem>Short summary</FeatureItem>
-              <FeatureItem>3 improvement suggestions</FeatureItem>
-              <FeatureItem>Basic missing skills</FeatureItem>
+              <FeatureItem>{COPY_FREE_TIER_PRIMARY_LINE}</FeatureItem>
+              <FeatureItem>Fit score & short summary</FeatureItem>
+              <FeatureItem>3 improvement suggestions (preview)</FeatureItem>
+              <FeatureItem>No card required</FeatureItem>
             </ul>
             <Link
               href="/analyze"
@@ -137,7 +142,7 @@ export default function PricingPage() {
                 <span className="text-4xl font-bold tabular-nums text-white lg:text-3xl">€{PRICE_PRO_REPORT_EUR}</span>
                 <span className="text-sm font-medium text-violet-200/90 lg:text-xs">one-time</span>
               </p>
-              <p className="mt-2 text-sm text-violet-200/70 lg:text-xs">Deep dive for one application</p>
+              <p className="mt-2 text-sm text-violet-200/70 lg:text-xs">{COPY_PRO_REPORT_ONELINE}</p>
               <Link
                 href="/pro-report"
                 className="mt-3 inline-block text-xs font-medium text-cyan-400/90 underline-offset-2 hover:text-cyan-300 hover:underline lg:mt-2"
@@ -146,19 +151,12 @@ export default function PricingPage() {
               </Link>
             </div>
             <ul className="flex flex-1 flex-col gap-3 lg:gap-2">
-              <FeatureItem>Full AI analysis</FeatureItem>
-              <FeatureItem>All CV improvement suggestions</FeatureItem>
-              <FeatureItem>ATS keyword checklist</FeatureItem>
-              <FeatureItem>Tailored cover letter</FeatureItem>
-              <FeatureItem>PDF export</FeatureItem>
-              <FeatureItem>Best for one job application</FeatureItem>
+              <FeatureItem>{COPY_PRO_REPORT_INCLUDES}</FeatureItem>
+              <FeatureItem>Paid securely via Stripe (€{PRICE_PRO_REPORT_EUR} one-time)</FeatureItem>
             </ul>
-            <Link
-              href="/analyze"
-              className="mt-8 inline-flex w-full min-h-[44px] items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-violet-500 px-6 py-3 text-center text-sm font-semibold text-slate-950 shadow-[0_0_28px_rgba(139,92,246,0.35)] transition hover:scale-[1.02] hover:shadow-[0_0_36px_rgba(56,189,248,0.4)] lg:mt-6 lg:min-h-0 lg:py-2.5 lg:text-[13px]"
-            >
-              Unlock Pro Report
-            </Link>
+            <div className="mt-8 w-full lg:mt-6">
+              <ProReportCheckoutButton analyticsSurface="pricing_page_pro_report">{LABEL_BUY_PRO_REPORT}</ProReportCheckoutButton>
+            </div>
           </article>
 
           {/* Monthly Pro */}
@@ -169,22 +167,17 @@ export default function PricingPage() {
                 <span className="text-4xl font-bold tabular-nums text-white lg:text-3xl">€{PRICE_MONTHLY_PRO_EUR}</span>
                 <span className="text-sm font-medium text-slate-400 lg:text-xs">/month</span>
               </p>
-              <p className="mt-2 text-sm text-slate-500 lg:text-xs">For steady applications</p>
+              <p className="mt-2 text-sm text-slate-500 lg:text-xs">{COPY_MONTHLY_PRO_TAGLINE}</p>
             </div>
             <ul className="flex flex-1 flex-col gap-3 lg:gap-2">
-              <FeatureItem>Up to {MONTHLY_PRO_ANALYSES_PER_MONTH} analyses / month (UTC)</FeatureItem>
-              <FeatureItem>Saved reports</FeatureItem>
-              <FeatureItem>Cover letters</FeatureItem>
-              <FeatureItem>PDF exports</FeatureItem>
-              <FeatureItem>Full ATS optimization</FeatureItem>
-              <FeatureItem>Best for active job seekers</FeatureItem>
+              <FeatureItem>{COPY_MONTHLY_PRO_INCLUDES_LONG}</FeatureItem>
+              <FeatureItem>Billed monthly via Stripe — cancel anytime from the portal</FeatureItem>
             </ul>
-            <Link
-              href="/analyze"
-              className="mt-8 inline-flex w-full min-h-[44px] items-center justify-center rounded-full border border-cyan-400/35 bg-cyan-500/10 px-6 py-3 text-center text-sm font-semibold text-cyan-100 transition hover:border-cyan-400/55 hover:bg-cyan-500/15 lg:mt-6 lg:min-h-0 lg:py-2.5 lg:text-[13px]"
-            >
-              Go Pro
-            </Link>
+            <div className="mt-8 w-full lg:mt-6">
+              <MonthlyProCheckoutButton analyticsSurface="pricing_page_monthly_pro">
+                {LABEL_SUBSCRIBE_MONTHLY_PRO}
+              </MonthlyProCheckoutButton>
+            </div>
           </article>
         </div>
           </div>

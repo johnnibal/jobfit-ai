@@ -4,6 +4,11 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { trackEvent } from '@/lib/analytics/track'
+import {
+  SUCCESS_MONTHLY_PRO_ACTIVE_BODY,
+  SUCCESS_MONTHLY_PRO_ACTIVE_TITLE,
+  SUCCESS_SUBSCRIPTION_LOADING_BODY,
+} from '@/lib/billing/checkoutSuccessCopy'
 
 export default function SubscriptionSuccessClient() {
   const searchParams = useSearchParams()
@@ -75,9 +80,7 @@ export default function SubscriptionSuccessClient() {
                 Confirming subscription
               </div>
               <h1 className="text-2xl font-semibold text-white">Almost there…</h1>
-              <p className="mt-3 text-sm leading-relaxed text-slate-400">
-                Saving your Monthly Pro subscription to your billing profile and setting secure cookies on this browser.
-              </p>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">{SUCCESS_SUBSCRIPTION_LOADING_BODY}</p>
               <div className="mt-8 flex gap-2">
                 <div className="h-2 flex-1 animate-pulse rounded-full bg-slate-800" />
                 <div className="h-2 w-16 animate-pulse rounded-full bg-violet-500/40" />
@@ -90,11 +93,8 @@ export default function SubscriptionSuccessClient() {
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-200">
                 Subscription active
               </div>
-              <h1 className="text-2xl font-semibold text-white">Welcome to Monthly Pro</h1>
-              <p className="mt-3 text-sm leading-relaxed text-slate-400">
-                Higher monthly quota, full reports, exports, and saved reports are unlocked while your subscription stays active.
-                Redirecting…
-              </p>
+              <h1 className="text-2xl font-semibold text-white">{SUCCESS_MONTHLY_PRO_ACTIVE_TITLE}</h1>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">{SUCCESS_MONTHLY_PRO_ACTIVE_BODY}</p>
               <Link
                 href="/analyze?sub=1"
                 className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-violet-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.01]"
