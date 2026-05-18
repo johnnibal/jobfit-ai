@@ -62,6 +62,8 @@ export default function CheckoutSuccessClient() {
           analysisId?: string
           error?: string
           code?: string
+          debugReason?: string
+          bindSubtype?: string
         }
         if (!res.ok) {
           if (
@@ -75,7 +77,14 @@ export default function CheckoutSuccessClient() {
             }, Math.min(500 + paymentPendingRetryCountRef.current * 450, 3000))
             return
           }
-          throw new Error(typeof data.error === 'string' ? data.error : 'Verification failed.')
+          let errMsg = typeof data.error === 'string' ? data.error : 'Verification failed.'
+          if (typeof data.debugReason === 'string' && data.debugReason.trim()) {
+            errMsg += `\n\nTechnical (diagnostics):\n${data.debugReason}`
+          }
+          if (typeof data.bindSubtype === 'string' && data.bindSubtype.trim()) {
+            errMsg += `\n(bindSubtype: ${data.bindSubtype})`
+          }
+          throw new Error(errMsg)
         }
         if (cancelled) return
 

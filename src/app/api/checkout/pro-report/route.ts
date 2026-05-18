@@ -1,13 +1,22 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
+import { prebindProReportPendingCreditRowAtCheckout } from '@/lib/billing/proReportPendingCredit.server'
 import { isAnalysisUnlocked } from '@/lib/billing/proReportUnlock'
 import { resolveProReportPromo } from '@/lib/billing/proReportPromos.server'
 import { getPublicAppUrl } from '@/lib/appUrl'
 import { getStripe } from '@/lib/stripe'
 import { buildProReportCheckoutStripeCoreFields } from '@/lib/billing/proReportStripeCheckoutFields'
+import {
+  JOBFIT_ANON_COOKIE,
+  mintAnonymousSessionId,
+  signAnonymousSessionId,
+  verifyAnonymousCookie,
+} from '@/lib/usage/anonymousCookie'
+import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
 
 export async function POST(req: Request) {
   try {
@@ -86,6 +95,10 @@ export async function POST(req: Request) {
       metadataPromo = promo.canonicalCode
     }
 
+    const jar = await cookies()
+    const anonVerified = verifyAnonymousCookie(jar.get(JOBFIT_ANON_COOKIE)?.value)
+    const anonymousSessionId = anonVerified ?? mintAnonymousSessionId()
+
     const core = buildProReportCheckoutStripeCoreFields(analysisId)
 
     const session = await stripe.checkout.sessions.create({
@@ -105,7 +118,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Stripe did not return a checkout URL.' }, { status: 502 })
     }
 
-    return NextResponse.json({ url: session.url })
+    /**
+     * Pre-bind pending credit BEFORE redirect so the same Stripe session + HttpOnly anon id correlate.
+     * `confirm-session` verifies the anon cookie matches this row.
+     */
+    if (!hasAnalysisId) {
+      try {
+        await prebindProReportPendingCreditRowAtCheckout({
+          stripeCheckoutSessionId: session.id,
+          anonymousSessionId,
+        })
+      } catch (bindErr) {
+        console.error(
+          '[checkout/pro-report] prebind pending credit failed',
+          bindErr instanceof Error ? bindErr.message.slice(0, 200) : 'unknown'
+        )
+        const res = NextResponse.json(
+          { error: 'Could not reserve prepaid credit. Try again shortly.' },
+          { status: 500 }
+        )
+        applyAnonymousSessionCookie(res, signAnonymousSessionId(anonymousSessionId))
+        return res
+      }
+    }
+
+    const res = NextResponse.json({ url: session.url })
+    applyAnonymousSessionCookie(res, signAnonymousSessionId(anonymousSessionId))
+    return res
   } catch (e) {
     console.error('[checkout/pro-report]', e instanceof Error ? e.message : 'unknown_error')
     return NextResponse.json({ error: 'Unable to start checkout. Try again shortly.' }, { status: 500 })

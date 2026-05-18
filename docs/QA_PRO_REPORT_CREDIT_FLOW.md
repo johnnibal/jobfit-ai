@@ -12,6 +12,9 @@ Staging or local deployment with Stripe **test** keys, OpenRouter reachable, Pos
 | `STRIPE_MONTHLY_PRO_PRICE_ID` | Same — **price** id for Monthly Pro regression. |
 | `NEXT_PUBLIC_APP_URL` | Matches where you run the browser (Stripe success redirect). |
 | `JOBFIT_ENTITLEMENT_SECRET`, `JOBFIT_USAGE_SECRET` | Min 16 chars; required for entitlement + pending credit cookies in non-demo flows. |
+| `JOBFIT_BILLING_DIAGNOSTICS` | Optional **`true`** on staging (Railway `NODE_ENV` is often production): prepaid `confirm-session` failures include `debugReason` / `bindSubtype` JSON for QA. |
+
+**Behavior note (Flow B / prepaid credit):** `POST /api/checkout/pro-report` **without `analysisId`** issues/refreshes the signed **`jobfit_anon`** cookie and **pre-reserves** a `ProReportPendingCredit` row for the new Stripe `session.id` against that anonymous id **before** redirecting to Stripe. `/api/billing/confirm-session` then **requires** a verified `jobfit_anon` cookie (**no silent mint**) and aligns binds using structured diagnostics when `JOBFIT_BILLING_DIAGNOSTICS=true`.
 
 **Automated invariant:** `/api/checkout/pro-report` sends `line_items: [{ price: … }]` built from **`STRIPE_PRO_REPORT_PRICE_ID`** only (`src/app/api/checkout/pro-report/route.ts`). Webhook handlers should **not** be pointed at Product ids instead of Prices.
 
