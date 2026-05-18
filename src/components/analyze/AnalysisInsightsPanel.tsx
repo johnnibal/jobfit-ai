@@ -39,7 +39,7 @@ import { parseAnalysisSections, stripMatchScorePrefix, isFitAnalysisOutput } fro
 import { buildJobFitReportPdfHtml } from '@/lib/pdf/jobFitReportPdf'
 import { useBillingSandboxEnvironment } from '@/lib/billing/useBillingSandboxEnvironment'
 import { trackEvent } from '@/lib/analytics/track'
-import { btnPrimary, btnSecondary, card, cardPadding, lockedPanel, resultSection, scoreCard } from '@/components/ui/theme'
+import { btnPrimary, btnSecondary, card, cardPadding, lockedPanel, resultSection, scoreCard, scoreValue } from '@/components/ui/theme'
 
 const SHORT_SUMMARY_MAX_CHARS = 320
 
@@ -805,7 +805,7 @@ export function AnalysisInsightsPanel({
  '…'
  ) : (
  <>
- <span className="font-semibold text-emerald-700">{quotaRemaining}</span>
+ <span className="font-semibold text-indigo-700">{quotaRemaining}</span>
  <span className="text-zinc-500"> left · </span>
  {Math.min(quotaUsed, quotaCap)} / {quotaCap}
  </>
@@ -856,7 +856,7 @@ export function AnalysisInsightsPanel({
  <div className="mt-2 space-y-1.5 text-xs leading-relaxed text-zinc-600">
  <p>
  Monthly Pro:{' '}
- <span className={billing.monthlyProActive ? 'font-medium text-emerald-700' : 'font-medium text-zinc-500'}>
+ <span className={billing.monthlyProActive ? 'font-medium text-indigo-700' : 'font-medium text-zinc-500'}>
  {billing.monthlyProActive ? 'Active' : 'Not active'}
  </span>
  {billing.subscriptionStatus && billing.subscriptionStatus !== 'none' ? (
@@ -1056,7 +1056,7 @@ export function AnalysisInsightsPanel({
  <p className="text-sm font-medium text-zinc-900">Match score</p>
  <p className="mt-0.5 text-xs text-zinc-500">CV compared to this job posting</p>
  </div>
- <p className="text-4xl font-semibold tabular-nums tracking-tight text-zinc-900">
+ <p className={scoreValue}>
  {matchScore}
  <span className="text-xl font-medium text-zinc-500">%</span>
  </p>
@@ -1550,7 +1550,7 @@ export function AnalysisInsightsPanel({
  }}
  className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 min-[420px]:min-w-[200px] ${
  canExportPDF(permissionCtx)
- ? 'bg-zinc-900 text-white hover:bg-zinc-800'
+ ? 'bg-indigo-600 text-white hover:bg-indigo-700'
  : 'cursor-pointer border border-zinc-300 bg-white text-zinc-800 hover:border-zinc-400 hover:bg-zinc-50'
  }`}
  >

@@ -9,6 +9,7 @@ import {
  SUCCESS_MONTHLY_PRO_ACTIVE_TITLE,
  SUCCESS_SUBSCRIPTION_LOADING_BODY,
 } from '@/lib/billing/checkoutSuccessCopy'
+import { btnPrimary } from '@/components/ui/theme'
 
 export default function SubscriptionSuccessClient() {
  const searchParams = useSearchParams()
@@ -96,7 +97,7 @@ export default function SubscriptionSuccessClient() {
  <p className="mt-3 text-sm leading-relaxed text-zinc-600">{SUCCESS_MONTHLY_PRO_ACTIVE_BODY}</p>
  <Link
  href="/analyze?sub=1"
- className="mt-8 inline-flex w-full min-h-[44px] items-center justify-center rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
+ className={`${btnPrimary} mt-8 w-full px-6 py-3`}
  >
  Open analyzer
  </Link>

@@ -3,11 +3,17 @@
 :root {
   --background: #fafafa;
   --foreground: #18181b;
+  --accent: #4f46e5;
+  --accent-muted: #eef2ff;
+  --accent-border: #c7d2fe;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-muted: var(--accent-muted);
+  --color-accent-border: var(--accent-border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

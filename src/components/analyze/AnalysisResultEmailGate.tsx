@@ -6,6 +6,7 @@ import {
  EMAIL_CAPTURE_CONSENT_LABEL,
  EMAIL_CAPTURE_CONSENT_VERSION,
 } from '@/lib/growth/emailCaptureConsent'
+import { btnPrimary } from '@/components/ui/theme'
 
 type Props = {
  analysisId: string
@@ -132,7 +133,7 @@ export function AnalysisResultEmailGate({ analysisId, onRelease }: Props) {
  type="button"
  onClick={() => void sendReport()}
  disabled={busy}
- className="inline-flex flex-1 items-center justify-center rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+ className={`${btnPrimary} flex-1 px-6 py-3 sm:flex-none disabled:cursor-not-allowed disabled:opacity-60`}
  >
  {busy ? 'Saving…' : 'Send me my report'}
  </button>

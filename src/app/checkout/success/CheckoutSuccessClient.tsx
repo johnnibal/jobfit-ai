@@ -12,6 +12,7 @@ import {
  SUCCESS_PRO_REPORT_UNLOCKED_BODY,
  SUCCESS_PRO_REPORT_UNLOCKED_TITLE,
 } from '@/lib/billing/checkoutSuccessCopy'
+import { btnPrimary } from '@/components/ui/theme'
 
 export default function CheckoutSuccessClient() {
  const searchParams = useSearchParams()
@@ -190,7 +191,7 @@ export default function CheckoutSuccessClient() {
  ? `/analyze?pro=${encodeURIComponent(analysisId)}`
  : '/analyze'
  }
- className="mt-8 inline-flex w-full min-h-[44px] items-center justify-center rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
+ className={`${btnPrimary} mt-8 w-full px-6 py-3`}
  >
  Go to analyzer
  </Link>
@@ -211,7 +212,7 @@ export default function CheckoutSuccessClient() {
  <button
  type="button"
  onClick={handleRetryConfirm}
- className="mt-6 inline-flex w-full min-h-[44px] items-center justify-center rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
+ className={`${btnPrimary} mt-6 w-full px-6 py-3`}
  >
  Try verifying again
  </button>

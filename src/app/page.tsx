@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import HeroMatchIllustration from '@/components/HeroMatchIllustration'
 import { HomeTrackedLink } from '@/components/analytics/HomeTrackedLink'
 import { MonthlyProCheckoutButton, ProReportCheckoutButton } from '@/components/billing/PlanStripeCheckoutButtons'
 import {
@@ -9,13 +10,20 @@ import {
   PRICE_PRO_REPORT_EUR,
 } from '@/lib/planTypes'
 import {
+  badge,
+  brandDot,
+  brandMark,
   btnPrimary,
   btnSecondary,
   btnSecondaryFull,
   card,
+  cardFeatured,
   cardPadding,
+  iconAccent,
   pageMain,
   sectionHeading,
+  stepBadge,
+  textLink,
 } from '@/components/ui/theme'
 
 export const metadata: Metadata = {
@@ -26,7 +34,7 @@ export const metadata: Metadata = {
 
 function CheckIcon() {
   return (
-    <svg className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+    <svg className={`mt-0.5 h-4 w-4 shrink-0 ${iconAccent}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
       <path
         fillRule="evenodd"
         d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
@@ -51,11 +59,9 @@ export default function Home() {
   return (
     <main className={pageMain}>
       <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:pb-24 lg:pt-10">
-        <header className="mb-16 flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-6">
-          <Link
-            href="/"
-            className="text-sm font-semibold tracking-tight text-zinc-900 transition hover:text-zinc-600"
-          >
+        <header className="mb-12 flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-6">
+          <Link href="/" className={brandMark}>
+            <span className={brandDot} aria-hidden />
             JobFit AI
           </Link>
           <nav className="flex flex-wrap gap-2 text-sm font-medium" aria-label="Primary">
@@ -69,25 +75,29 @@ export default function Home() {
         </header>
 
         {/* Hero */}
-        <section className="mx-auto max-w-3xl">
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
-            Know if your CV fits the job before you apply
-          </h1>
-          <p className="mt-4 text-base leading-relaxed text-zinc-600 sm:text-lg">
-            JobFit AI compares your CV with a job posting, gives you a fit score, finds missing gaps, and helps you
-            improve your application.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <HomeTrackedLink href="/analyze" ctaId="hero_primary_analyze" className={btnPrimary}>
-              Analyze My CV
-            </HomeTrackedLink>
-            <HomeTrackedLink href="/pricing" ctaId="hero_secondary_pricing" className={btnSecondary}>
-              View Pricing
-            </HomeTrackedLink>
+        <section className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)] lg:gap-12">
+          <div className="max-w-xl">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-indigo-600">CV fit analysis</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
+              Know if your CV fits the job before you apply
+            </h1>
+            <p className="mt-4 text-base leading-relaxed text-zinc-600 sm:text-lg">
+              JobFit AI compares your CV with a job posting, gives you a fit score, finds missing gaps, and helps you
+              improve your application.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <HomeTrackedLink href="/analyze" ctaId="hero_primary_analyze" className={btnPrimary}>
+                Analyze My CV
+              </HomeTrackedLink>
+              <HomeTrackedLink href="/pricing" ctaId="hero_secondary_pricing" className={btnSecondary}>
+                View Pricing
+              </HomeTrackedLink>
+            </div>
+            <p className="mt-6 text-sm text-zinc-500">
+              Free tier available. No card required to try the analyzer.
+            </p>
           </div>
-          <p className="mt-6 text-sm text-zinc-500">
-            Free tier available. No card required to try the analyzer.
-          </p>
+          <HeroMatchIllustration />
         </section>
 
         {/* How it works */}
@@ -117,9 +127,7 @@ export default function Home() {
               },
             ].map((item) => (
               <li key={item.step} className={`${card} p-5 sm:p-6`}>
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-700">
-                  {item.step}
-                </span>
+                <span className={stepBadge}>{item.step}</span>
                 <h3 className="mt-4 text-sm font-semibold text-zinc-900">{item.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-600">{item.body}</p>
               </li>
@@ -169,11 +177,7 @@ export default function Home() {
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-zinc-600">
             Start free. Full details on the{' '}
-            <HomeTrackedLink
-              href="/pricing"
-              ctaId="pricing_section_compare_link"
-              className="font-medium text-zinc-900 underline-offset-2 hover:underline"
-            >
+            <HomeTrackedLink href="/pricing" ctaId="pricing_section_compare_link" className={textLink}>
               pricing page
             </HomeTrackedLink>
             .
@@ -192,13 +196,11 @@ export default function Home() {
               </HomeTrackedLink>
             </article>
 
-            <article className={`${planCard} relative border-zinc-400`}>
-              <span className="absolute -top-2.5 left-4 rounded-md border border-zinc-300 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
-                Recommended
-              </span>
+            <article className={`${cardFeatured} ${cardPadding} relative flex flex-col`}>
+              <span className={`${badge} absolute -top-2.5 left-4`}>Recommended</span>
               <h3 className="pt-1 text-base font-semibold text-zinc-900">Pro Report</h3>
               <p className="mt-2 flex items-baseline gap-2">
-                <span className="text-3xl font-semibold tabular-nums text-zinc-900">€{PRICE_PRO_REPORT_EUR}</span>
+                <span className="text-3xl font-semibold tabular-nums text-indigo-700">€{PRICE_PRO_REPORT_EUR}</span>
                 <span className="text-sm text-zinc-500">one-time</span>
               </p>
               <ul className="mt-5 flex flex-1 flex-col gap-2.5">
@@ -236,22 +238,22 @@ export default function Home() {
         <footer className="mt-20 border-t border-zinc-200 pt-8 text-center text-xs text-zinc-500">
           <p>JobFit AI. CV and role fit tooling for applicants in Germany.</p>
           <nav className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-zinc-600">
-            <HomeTrackedLink href="/analyze" ctaId="footer_analyzer" className="hover:text-zinc-900">
+            <HomeTrackedLink href="/analyze" ctaId="footer_analyzer" className="hover:text-indigo-600">
               Analyzer
             </HomeTrackedLink>
-            <HomeTrackedLink href="/pricing" ctaId="footer_pricing" className="hover:text-zinc-900">
+            <HomeTrackedLink href="/pricing" ctaId="footer_pricing" className="hover:text-indigo-600">
               Pricing
             </HomeTrackedLink>
-            <Link href="/privacy" className="hover:text-zinc-900">
+            <Link href="/privacy" className="hover:text-indigo-600">
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-zinc-900">
+            <Link href="/terms" className="hover:text-indigo-600">
               Terms
             </Link>
-            <Link href="/refund-policy" className="hover:text-zinc-900">
+            <Link href="/refund-policy" className="hover:text-indigo-600">
               Refunds
             </Link>
-            <Link href="/imprint" className="hover:text-zinc-900">
+            <Link href="/imprint" className="hover:text-indigo-600">
               Imprint
             </Link>
           </nav>

@@ -8,7 +8,17 @@ import {
   PRICE_MONTHLY_PRO_EUR,
   PRICE_PRO_REPORT_EUR,
 } from '@/lib/planTypes'
-import { btnPrimary, btnSecondary } from '@/components/ui/theme'
+import {
+  badge,
+  brandDot,
+  brandMark,
+  btnPrimary,
+  btnSecondary,
+  cardFeatured,
+  iconAccent,
+  pageMain,
+  textLink,
+} from '@/components/ui/theme'
 
 export const metadata: Metadata = {
   title: 'Pricing · JobFit AI',
@@ -18,7 +28,7 @@ export const metadata: Metadata = {
 function CheckIcon() {
   return (
     <svg
-      className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500"
+      className={`mt-0.5 h-4 w-4 shrink-0 ${iconAccent}`}
       viewBox="0 0 20 20"
       fill="currentColor"
       aria-hidden
@@ -46,13 +56,11 @@ const planCard =
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-zinc-50 text-zinc-900">
+    <main className={pageMain}>
       <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:pb-24 lg:pt-10">
         <header className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-6">
-          <Link
-            href="/"
-            className="text-sm font-semibold tracking-tight text-zinc-900 transition hover:text-zinc-600"
-          >
+          <Link href="/" className={brandMark}>
+            <span className={brandDot} aria-hidden />
             JobFit AI
           </Link>
           <nav className="flex flex-wrap items-center gap-2 text-sm font-medium">
@@ -95,14 +103,14 @@ export default function PricingPage() {
           </article>
 
           {/* Pro Report (recommended) */}
-          <article className={`${planCard} relative border-zinc-400`}>
-            <span className="absolute -top-2.5 left-4 rounded-md border border-zinc-300 bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
+          <article className={`${cardFeatured} relative flex min-w-0 flex-col p-6 sm:p-7`}>
+            <span className={`${badge} absolute -top-2.5 left-4`}>
               Recommended
             </span>
             <div className="mb-5 pt-1">
               <h2 className="text-base font-semibold text-zinc-900">Pro Report</h2>
               <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span className="text-3xl font-semibold tabular-nums text-zinc-900">€{PRICE_PRO_REPORT_EUR}</span>
+                <span className="text-3xl font-semibold tabular-nums text-indigo-700">€{PRICE_PRO_REPORT_EUR}</span>
                 <span className="text-sm text-zinc-500">one-time</span>
               </p>
               <p className="mt-1 text-xs text-zinc-500">One application, full report</p>
@@ -174,7 +182,7 @@ export default function PricingPage() {
               <dt className="text-sm font-medium text-zinc-900">Is my CV private?</dt>
               <dd className="mt-2 text-sm leading-relaxed text-zinc-600">
                 Your text is used only to generate your analysis. We do not train public models on it. See our{' '}
-                <Link href="/privacy" className="text-zinc-800 underline-offset-2 hover:underline">
+                <Link href="/privacy" className={textLink}>
                   Privacy
                 </Link>{' '}
                 policy for retention and your rights.

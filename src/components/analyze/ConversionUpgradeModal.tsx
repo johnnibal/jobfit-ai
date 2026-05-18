@@ -19,6 +19,7 @@ import { trackEvent } from '@/lib/analytics/track'
 import type { AppliedProPromo } from '@/components/billing/ProReportPromoBox'
 import { ProReportPromoBox } from '@/components/billing/ProReportPromoBox'
 import { useBillingSandboxEnvironment } from '@/lib/billing/useBillingSandboxEnvironment'
+import { btnPrimary } from '@/components/ui/theme'
 
 export type ConversionUpgradeVariant = 'conversion' | 'quota_daily' | 'quota_monthly'
 
@@ -196,7 +197,7 @@ export function ConversionUpgradeModal({
  type="button"
  disabled={portalBusy}
  onClick={handlePortalClick}
- className="inline-flex min-h-[48px] w-full items-center justify-center rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
+ className={`${btnPrimary} min-h-[48px] w-full px-6 py-3`}
  >
  {portalBusy ? 'Opening portal…' : 'Manage subscription'}
  </button>
@@ -286,7 +287,7 @@ export function ConversionUpgradeModal({
  type="button"
  disabled={portalBusy}
  onClick={handlePortalClick}
- className="inline-flex min-h-[48px] w-full items-center justify-center rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
+ className={`${btnPrimary} min-h-[48px] w-full px-6 py-3`}
  >
  {portalBusy ? 'Opening portal…' : 'Manage subscription'}
  </button>
@@ -298,7 +299,7 @@ export function ConversionUpgradeModal({
  className={`inline-flex min-h-[48px] w-full items-center justify-center rounded-full border px-6 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
  hasStripeBillingHistory
  ? 'border-zinc-300 bg-zinc-50 text-zinc-900 hover:border-slate-500'
- : 'border-transparent bg-zinc-900 text-white hover:bg-zinc-800'
+ : `${btnPrimary} border-transparent`
  }`}
  >
  {subscribeMonthlyBusy ? 'Opening Checkout…' : LABEL_SUBSCRIBE_MONTHLY_PRO}
@@ -371,7 +372,7 @@ export function ConversionUpgradeModal({
  type="button"
  disabled={subscribeMonthlyBusy}
  onClick={handleUpgradeMonthlyClick}
- className="mt-5 inline-flex min-h-[48px] w-full items-center justify-center rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
+ className={`${btnPrimary} mt-5 min-h-[48px] w-full px-6 py-3`}
  >
  {subscribeMonthlyBusy ? 'Opening Checkout…' : LABEL_SUBSCRIBE_MONTHLY_PRO}
  </button>
