@@ -390,6 +390,7 @@ export default function AnalyzePageClient() {
         message?: unknown
         error?: unknown
         analysisId?: unknown
+        fullReportAccess?: unknown
         code?: unknown
         quota?: { mode?: unknown }
       }
@@ -440,15 +441,26 @@ export default function AnalyzePageClient() {
       const id = serverIdRaw
       trackEvent('analysis_completed', { ok: true })
 
-      if (isSuccessfulFitAnalysisOutput(msg)) {
+      const serverFullAccess = data.fullReportAccess === true
+
+      /** Growth email gate is for free previews only — paid tiers should see results immediately */
+      const skipGrowthEmailGate =
+        monthlyProActive ||
+        (usageUi.status === 'ready' && usageUi.monthlyProVerified) ||
+        serverFullAccess
+
+      if (isSuccessfulFitAnalysisOutput(msg) && !skipGrowthEmailGate) {
         setGatedAnalysis({ analysisId: id, resultText: msg })
       } else {
+        setGatedAnalysis(null)
         setAnalysisId(id)
         setResult(msg)
-        maybeTrackFreeResultView(id, false)
+        if (!skipGrowthEmailGate) {
+          maybeTrackFreeResultView(id, false)
+        }
       }
 
-      refreshUsage()
+      void fetchBillingSession()
     } catch {
       trackEvent('analysis_completed', { ok: false })
     } finally {

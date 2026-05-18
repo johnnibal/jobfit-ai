@@ -468,6 +468,8 @@ export function AnalysisInsightsPanel({
 
   const sections = useMemo(() => (result ? parseAnalysisSections(result) : null), [result])
 
+  const gatedFree = useMemo(() => shouldGateAnalysisSections(permissionCtx), [permissionCtx])
+
   useEffect(() => {
     setCoverLetterText('')
     setCoverGenError(null)
@@ -486,13 +488,14 @@ export function AnalysisInsightsPanel({
     if (!sections) return ''
     const joined = sections.verdictParagraphs.join(' ').trim()
     if (joined) return joined
-    const fallback = stripMatchScorePrefix(result ?? '')
+    const stripped = stripMatchScorePrefix(result ?? '').trim()
+    /** Free tier keeps a teaser; monthly / Pro purchasers see full plain-text fallback when headings are missing */
+    if (!gatedFree && stripped.length > 0) return stripped
+    const fallbackLine = stripped
       .split('\n')
       .find((l) => l.trim().length > 0)
-    return fallback?.trim() ?? ''
-  }, [sections, result])
-
-  const gatedFree = shouldGateAnalysisSections(permissionCtx)
+    return fallbackLine?.trim() ?? ''
+  }, [sections, result, gatedFree])
 
   const showConversionUpsell = Boolean(onOpenUpgradeModal && gatedFree && result)
 

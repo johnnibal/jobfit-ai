@@ -241,6 +241,8 @@ export async function POST(req: Request) {
     const rawMessage = completion.choices[0]?.message?.content
     const message = typeof rawMessage === 'string' ? rawMessage.trim() : ''
 
+    const fullReportAccess = mode === 'monthly' || prepaidCreditRowId != null
+
     if (!message) {
       if (quotaConsumed && !usageLimitsDisabled()) {
         await decrementAnalysisUsage(subject, mode).catch(() => {})
@@ -266,7 +268,7 @@ export async function POST(req: Request) {
         )
       }
 
-      const res = NextResponse.json({ message, analysisId }, { status: 200 })
+      const res = NextResponse.json({ message, analysisId, fullReportAccess }, { status: 200 })
       applyAnonymousSessionCookie(res, signedAnon)
       try {
         attachProReportEntitlementTokenCookie(
@@ -285,7 +287,7 @@ export async function POST(req: Request) {
       return res
     }
 
-    return respond({ message, analysisId }, 200)
+    return respond({ message, analysisId, fullReportAccess }, 200)
   } catch (error: unknown) {
     if (quotaConsumed && !usageLimitsDisabled()) {
       await decrementAnalysisUsage(subject, mode).catch(() => {})
