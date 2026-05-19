@@ -14,14 +14,18 @@ import {
   brandMark,
   btnPrimary,
   btnSecondary,
-  bulletText,
   card,
-  cardFeatured,
   footerBar,
   headerBar,
   iconAccent,
+  pageContainer,
   pageMain,
   pricingPlanCard,
+  pricingPlanCardFeatured,
+  pricingPlanFeature,
+  pricingPlanPrice,
+  pricingPlanPriceValue,
+  pricingPlanTitle,
   sectionHeading,
   textLink,
   textMuted,
@@ -51,7 +55,7 @@ function CheckIcon() {
 
 function FeatureItem({ children }: { children: ReactNode }) {
   return (
-    <li className={`flex gap-2.5 ${bulletText}`}>
+    <li className={`flex gap-2.5 ${pricingPlanFeature}`}>
       <CheckIcon />
       <span>{children}</span>
     </li>
@@ -63,7 +67,7 @@ const planCard = pricingPlanCard
 export default function PricingPage() {
   return (
     <main className={pageMain}>
-      <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:pb-24 lg:pt-10">
+      <div className={`${pageContainer} pb-20 pt-8 lg:pb-24 lg:pt-10`}>
         <header className={`mb-10 flex flex-wrap items-center justify-between gap-4 ${headerBar}`}>
           <Link href="/" className={brandMark}>
             <span className={brandDot} aria-hidden />
@@ -89,14 +93,12 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-3 lg:items-stretch lg:gap-5">
+        <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-stretch">
           {/* Free */}
           <article className={planCard}>
             <div className="mb-5">
-              <h2 className="text-base font-semibold text-onyx">Free</h2>
-              <p className="mt-3 flex items-baseline gap-1">
-                <span className="text-3xl font-semibold tabular-nums text-onyx">€0</span>
-              </p>
+              <h2 className={pricingPlanTitle}>Free</h2>
+              <p className={pricingPlanPrice}>€0</p>
               <p className={`mt-1 text-xs ${textMuted}`}>No card required</p>
             </div>
             <ul className="flex flex-1 flex-col gap-2.5">
@@ -109,14 +111,14 @@ export default function PricingPage() {
           </article>
 
           {/* Pro Report (recommended) */}
-          <article className={`${cardFeatured} relative flex min-w-0 flex-col p-6 sm:p-7`}>
+          <article className={`${pricingPlanCardFeatured} relative flex min-w-0 flex-col`}>
             <span className={`${badgeRecommended} absolute -top-2.5 left-4`}>
               Recommended
             </span>
             <div className="mb-5 pt-1">
-              <h2 className="text-base font-semibold text-onyx">Pro Report</h2>
+              <h2 className={pricingPlanTitle}>Pro Report</h2>
               <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span className="text-3xl font-semibold tabular-nums text-onyx">€{PRICE_PRO_REPORT_EUR}</span>
+                <span className={pricingPlanPriceValue}>€{PRICE_PRO_REPORT_EUR}</span>
                 <span className={`text-sm ${textMuted}`}>one-time</span>
               </p>
               <p className={`mt-1 text-xs ${textMuted}`}>One application, full report</p>
@@ -144,9 +146,9 @@ export default function PricingPage() {
           {/* Monthly Pro */}
           <article className={planCard}>
             <div className="mb-5">
-              <h2 className="text-base font-semibold text-onyx">Monthly Pro</h2>
+              <h2 className={pricingPlanTitle}>Monthly Pro</h2>
               <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span className="text-3xl font-semibold tabular-nums text-onyx">€{PRICE_MONTHLY_PRO_EUR}</span>
+                <span className={pricingPlanPriceValue}>€{PRICE_MONTHLY_PRO_EUR}</span>
                 <span className={`text-sm ${textMuted}`}>/month</span>
               </p>
               <p className={`mt-1 text-xs ${textMuted}`}>Best for active job seekers</p>

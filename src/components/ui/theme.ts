@@ -7,7 +7,7 @@ export const pageMain = 'min-h-screen bg-page text-onyx antialiased'
 /** max-width 1120px; 16px mobile / 24px desktop padding */
 export const pageContainer = 'mx-auto w-full max-w-[1120px] px-4 lg:px-6'
 
-export const analyzerPageContainer = 'mx-auto w-full max-w-[1180px] px-4 lg:px-6 pt-12'
+export const analyzerPageContainer = 'mx-auto w-full max-w-[1180px] px-4 lg:px-6 pt-10 sm:pt-12'
 
 export const card = `rounded-[18px] border border-ash/90 bg-white ${cardShadow}`
 
@@ -108,27 +108,37 @@ export const headerBar = 'flex h-[72px] items-center justify-between border-b bo
 
 export const footerBar = 'border-t border-ash/90 pt-10 text-center text-sm text-dim'
 
-export const insightCard = `rounded-[18px] border border-ash/90 bg-white p-6 ${cardShadow}`
-
 export const insightCardSubtle = 'rounded-[14px] border border-ash/80 bg-ash/10 px-4 py-3.5'
 
-export const insightHeading = 'text-base font-semibold text-onyx'
+export const insightHeading = 'text-[15px] font-semibold text-onyx'
 
 export const heroFrame =
-  'relative mx-auto mt-10 w-full max-w-[820px] overflow-visible rounded-[20px] border border-ash/90 bg-[#F4F7F6] p-5 shadow-[0_1px_2px_rgba(12,18,12,0.04),0_8px_24px_rgba(12,18,12,0.05)] sm:mt-14 sm:p-8 md:p-12'
+  'relative mx-auto w-full max-w-[820px] overflow-visible rounded-[20px] border border-ash/90 bg-[#F4F7F6] p-6 shadow-[0_1px_2px_rgba(12,18,12,0.04),0_8px_24px_rgba(12,18,12,0.05)] sm:p-10 md:p-12'
 
 export const heroMiniCard =
   `relative z-10 w-full max-w-[220px] rounded-[14px] border border-ash/90 bg-white p-4 ${cardShadow} sm:w-[220px] sm:p-5`
+
+export const heroMiniCardTitle = 'text-sm font-semibold tracking-tight text-onyx'
+
+export const heroSkillTag =
+  'rounded-full border border-ash/80 bg-white px-2.5 py-0.5 text-xs font-medium text-dim'
 
 export const heroFitScoreBubble =
   `absolute right-1 -top-6 z-20 rounded-lg border border-ash/90 border-b-[3px] border-b-brick/30 bg-white px-2.5 py-1.5 ${cardShadow} sm:right-2 sm:-top-7`
 
 export const pricingPlanCard =
-  `flex min-w-0 flex-col rounded-[18px] border border-ash/90 bg-white p-7 ${cardShadow}`
+  `flex min-w-0 flex-col rounded-[18px] border border-ash/90 bg-white p-6 sm:p-8 ${cardShadow}`
+
+export const pricingPlanCardFeatured =
+  `${cardFeatured} flex min-w-0 flex-col p-6 sm:p-8`
+
+export const insightCard = `rounded-[18px] border border-ash/90 bg-white p-5 sm:p-6 ${cardShadow}`
 
 export const pricingPlanTitle = 'text-base font-semibold text-onyx'
 
 export const pricingPlanPrice = 'mt-3 text-[32px] font-semibold tabular-nums leading-none text-onyx'
+
+export const pricingPlanPriceValue = 'text-[32px] font-semibold tabular-nums leading-none text-onyx'
 
 export const pricingPlanFeature = 'text-sm leading-relaxed text-dim'
 

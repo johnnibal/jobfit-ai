@@ -371,7 +371,7 @@ export function ConversionUpgradeModal({
  >
  {proButtonLabel}
  </button>
- {sandboxDemoCredits > 0 ? (
+ {billingSandboxVisible && sandboxDemoCredits > 0 ? (
  <p className="mt-2 text-center text-[11px] text-emerald-700">Sandbox: demo credits apply instantly.</p>
  ) : null}
  {proErr ? (

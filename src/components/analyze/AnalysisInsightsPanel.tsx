@@ -74,9 +74,9 @@ function UpgradeOptionsCard({
  checkoutSurface: string
  onLocalDevProReportFallback?: () => void
 }) {
- if (subscriberMonthlyPro) return null
-
  const localDevBilling = useBillingSandboxEnvironment()
+
+ if (subscriberMonthlyPro) return null
 
  const handleMonthlyClick = () => {
  if (localDevBilling) {
@@ -97,7 +97,7 @@ function UpgradeOptionsCard({
  <div>
  <p className="text-sm font-semibold text-onyx">Monthly Pro · €{PRICE_MONTHLY_PRO_EUR}/month</p>
  <p className="mt-1.5 text-sm leading-relaxed text-dim">{COPY_MONTHLY_PRO_TAGLINE}</p>
- {monthlyProActive ? (
+ {monthlyProActive && localDevBilling ? (
  <p className="mt-3 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-900">
  Monthly Pro is active on this browser.
  </p>
@@ -839,7 +839,7 @@ export function AnalysisInsightsPanel({
    : 'order-2 lg:col-start-2 lg:sticky lg:top-8 lg:self-start lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:overscroll-contain'
 
  const sidebarPanel = (
- <div className="flex flex-col gap-4">
+ <div className="flex flex-col gap-5">
  {/* Usage */}
  <div className={insightCard}>
  <div className="flex flex-wrap items-center justify-between gap-2">
@@ -872,7 +872,7 @@ export function AnalysisInsightsPanel({
  ? `${quotaCap} analyses per UTC month on Monthly Pro.`
  : `Free tier: ${COPY_FREE_TIER_PRIMARY_LINE}.`}
  </p>
- {monthlyProActive && !subscriberMonthlyPro ? (
+ {monthlyProActive && !subscriberMonthlyPro && billingSandboxVisible ? (
  <p className="mt-2 text-sm leading-relaxed text-emerald-800">
  Monthly Pro enabled in local demo. Use Billing sandbox below to turn it off.
  </p>
@@ -892,7 +892,7 @@ export function AnalysisInsightsPanel({
  </div>
 
  {/* Single upgrade card */}
- {!subscriberMonthlyPro && !monthlyProActive ? (
+ {!subscriberMonthlyPro && !(monthlyProActive && billingSandboxVisible) ? (
  <div className={insightCard}>
  <h2 className={insightHeading}>Upgrade</h2>
  <div className="mt-4">

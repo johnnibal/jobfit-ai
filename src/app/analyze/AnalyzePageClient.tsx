@@ -692,7 +692,7 @@ export default function AnalyzePageClient() {
           </p>
         </div>
 
-        <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_352px] lg:items-start">
           {showApplicationInputs ? (
           <form
             id="jobfit-application-inputs"

@@ -16,6 +16,8 @@ import {
   btnPrimary,
   btnSecondary,
   btnSecondaryFull,
+  card,
+  cardPadding,
   footerBar,
   headerBar,
   heroHeadline,
@@ -24,6 +26,7 @@ import {
   pageContainer,
   pageMain,
   pricingPlanCard,
+  pricingPlanCardFeatured,
   pricingPlanFeature,
   pricingPlanPrice,
   pricingPlanTitle,
@@ -94,14 +97,16 @@ export default function Home() {
             </HomeTrackedLink>
           </div>
           <p className={`mt-5 ${textMuted}`}>Free tier available. No card required to try the analyzer.</p>
-          <HeroMatchIllustration />
+          <div className="mt-12 sm:mt-16">
+            <HeroMatchIllustration />
+          </div>
         </section>
 
         <section className="mt-16 lg:mt-20" aria-labelledby="germany-heading">
           <h2 id="germany-heading" className={`${sectionHeading} text-center`}>
             Built for job seekers in Germany
           </h2>
-          <div className="mt-6 rounded-[18px] border border-ash/90 bg-white p-7 shadow-[0_1px_2px_rgba(12,18,12,0.05),0_6px_20px_rgba(12,18,12,0.06)] sm:p-8">
+          <div className={`${card} ${cardPadding} mt-7 sm:mt-8`}>
             <ul className="grid gap-4 sm:grid-cols-2">
               <Bullet>German and English CV and job text supported</Bullet>
               <Bullet>Highlights terms German postings often emphasize</Bullet>
@@ -123,7 +128,7 @@ export default function Home() {
             .
           </p>
 
-          <div className="mt-8 grid gap-5 lg:grid-cols-3 lg:items-stretch">
+          <div className="mt-8 grid gap-6 lg:grid-cols-3 lg:items-stretch">
             <article className={`${pricingPlanCard} flex flex-col`}>
               <h3 className={pricingPlanTitle}>Free</h3>
               <p className={pricingPlanPrice}>€0</p>
@@ -136,7 +141,7 @@ export default function Home() {
               </HomeTrackedLink>
             </article>
 
-            <article className={`${pricingPlanCard} relative flex flex-col border-t-2 border-t-brick`}>
+            <article className={`${pricingPlanCardFeatured} relative flex flex-col`}>
               <span className={`${badgeRecommended} absolute -top-2.5 left-4`}>Recommended</span>
               <h3 className={`${pricingPlanTitle} pt-1`}>Pro Report</h3>
               <p className={pricingPlanPrice}>
