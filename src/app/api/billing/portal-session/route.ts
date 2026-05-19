@@ -7,16 +7,18 @@ import { prisma } from '@/lib/prisma'
 import { JOBFIT_MONTHLY_PRO_COOKIE, verifyMonthlyProEntitlementCookie } from '@/lib/billing/signedPremiumCookie'
 import { getPublicAppUrl } from '@/lib/appUrl'
 import { getStripe } from '@/lib/stripe'
+import { ERR_DATABASE_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { logServerError } from '@/lib/logging/safeLog.server'
 
 export async function POST() {
   if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ error: 'Database not configured.' }, { status: 503 })
+    return NextResponse.json({ error: ERR_DATABASE_NOT_CONFIGURED }, { status: 503 })
   }
 
   const stripe = getStripe()
   const appUrl = getPublicAppUrl()
   if (!stripe || !appUrl) {
-    return NextResponse.json({ error: 'Stripe or app URL not configured.' }, { status: 503 })
+    return NextResponse.json({ error: 'Billing portal is not configured.' }, { status: 503 })
   }
 
   const jar = await cookies()
@@ -45,7 +47,7 @@ export async function POST() {
 
     return NextResponse.json({ url: portal.url })
   } catch (e) {
-    console.error('[portal-session]', e)
+    logServerError('[portal-session]', e)
     return NextResponse.json({ error: 'Unable to open billing portal.' }, { status: 500 })
   }
 }

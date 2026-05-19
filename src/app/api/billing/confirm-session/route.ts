@@ -22,6 +22,8 @@ import {
   verifyAnonymousCookie,
 } from '@/lib/usage/anonymousCookie'
 import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
+import { ERR_DATABASE_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { logServerError, logServerInfo, logServerWarn } from '@/lib/logging/safeLog.server'
 
 /**
  * Verify Checkout Session server-side (never trust the client alone).
@@ -34,7 +36,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Stripe not configured.' }, { status: 503 })
   }
   if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ error: 'Database not configured.' }, { status: 503 })
+    return NextResponse.json({ error: ERR_DATABASE_NOT_CONFIGURED }, { status: 503 })
   }
 
   const sessionId = new URL(req.url).searchParams.get('session_id')
@@ -72,7 +74,7 @@ export async function GET(req: Request) {
       const stripeSessionPrefix = trimmedSessionId.slice(0, 12)
       const anonCookieRawPresent = Boolean(jar.get(JOBFIT_ANON_COOKIE)?.value?.trim())
       const pendingCreditJarPresent = Boolean(jar.get(JOBFIT_PRO_REPORT_PENDING_CREDIT_COOKIE)?.value?.trim())
-      console.info('[confirm-session] prepaid-credit-context', {
+      logServerInfo('[confirm-session] prepaid-credit-context', {
         stripeSessionPrefix: `${stripeSessionPrefix}…`,
         metadata_jobfit_product: jobfitProduct || '(empty)',
         metadata_is_pro_report_credit: jobfitProduct === 'pro_report_credit',
@@ -84,11 +86,11 @@ export async function GET(req: Request) {
       const anonVerified = verifyAnonymousCookie(jar.get(JOBFIT_ANON_COOKIE)?.value)
 
       if (!anonVerified) {
-        console.warn('[confirm-session] prepaid credit refused — verified anonymous cookie missing')
+        logServerWarn('[confirm-session] prepaid credit refused — verified anonymous cookie missing')
         const res403 = NextResponse.json(
           {
             error:
-              'Your signed JobFit browser session cookie was missing after Stripe redirected back. This is usually caused by SameSite cookies blocked, a different domain than NEXT_PUBLIC_APP_URL, or clearing site data mid-checkout. Use the exact staging URL configured in Railway, reload /analyze once, retry “Verify again,” or reopen the Stripe receipt link.',
+              'Your signed JobFit browser session cookie was missing after Stripe redirected back. This is usually caused by SameSite cookies blocked, returning on a different URL than where checkout started, or clearing site data mid-checkout. Open the same site URL you used to start checkout, reload /analyze once, retry “Verify again,” or reopen the Stripe receipt link.',
             code: 'JOBFIT_ANON_COOKIE_MISSING' as const,
             ...(exposing ? { debugReason: 'verified_jobfit_anon_cookie_missing_on_confirm' } : {}),
           },
@@ -102,7 +104,7 @@ export async function GET(req: Request) {
         anonymousSessionId: anonVerified,
       })
 
-      console.info('[confirm-session] prepaid-credit-bind', {
+      logServerInfo('[confirm-session] prepaid-credit-bind', {
         stripeSessionPrefix,
         ok: bound.ok,
         failureCode: bound.ok ? undefined : bound.code,
@@ -110,7 +112,7 @@ export async function GET(req: Request) {
       })
 
       if (!bound.ok) {
-        console.warn('[confirm-session] prepaid credit binding failed', {
+        logServerWarn('[confirm-session] prepaid credit binding failed', {
           stripeSessionPrefix,
           code: bound.code,
           logDetail: bound.logDetail,
@@ -136,7 +138,7 @@ export async function GET(req: Request) {
       try {
         attachProReportPendingCreditCookie(res, bound.creditId)
       } catch (e) {
-        console.error('[confirm-session] pending credit cookie', e)
+        logServerError('[confirm-session] pending credit cookie', e)
         return NextResponse.json(
           {
             error: 'Could not issue secure prepaid credit cookie. Check server configuration.',
@@ -159,7 +161,7 @@ export async function GET(req: Request) {
       )
     }
 
-    console.info('[confirm-session]', {
+    logServerInfo('[confirm-session]', {
       stripeSessionTail: trimmedSessionId.slice(-12),
       jobfit_product: jobfitProduct || '(single unlock)',
       analysisTail: analysisId.slice(-8),
@@ -177,7 +179,7 @@ export async function GET(req: Request) {
             : ''
       await persistProReportUnlock(analysisId, session.id, sessionCustomer.startsWith('cus_') ? sessionCustomer : null)
     } catch (e) {
-      console.error('[confirm-session]', e)
+      logServerError('[confirm-session] persist_unlock', e)
       return NextResponse.json({ error: 'Could not save unlock.' }, { status: 500 })
     }
 
@@ -193,7 +195,7 @@ export async function GET(req: Request) {
         analysisId
       )
     } catch (e) {
-      console.error('[confirm-session] entitlement cookie', e)
+      logServerError('[confirm-session] entitlement cookie', e)
       return NextResponse.json(
         { error: 'Could not issue secure entitlement. Check server configuration.' },
         { status: 503 }
@@ -223,7 +225,7 @@ export async function GET(req: Request) {
     try {
       await upsertBillingAccountFromSubscription(subscription)
     } catch (e) {
-      console.error('[confirm-session] subscription sync', e)
+      logServerError('[confirm-session] subscription sync', e)
       return NextResponse.json({ error: 'Could not save subscription.' }, { status: 500 })
     }
 

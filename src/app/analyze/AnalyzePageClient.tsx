@@ -24,6 +24,8 @@ import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { localBillingSandboxActive } from '@/lib/billing/localBillingSandbox'
 import { trackEvent } from '@/lib/analytics/track'
 import { isFitAnalysisOutput } from '@/lib/parseAnalysis'
+import { parseAnalyzeSuccessBody } from '@/lib/analyze/buildAnalysisPreview'
+import type { LockedPreviewMetadata } from '@/lib/analyze/analysisResponseTypes'
 import { extractTextFromPdfFile } from '@/lib/pdf/extractPdfText'
 import {
   alertError,
@@ -61,6 +63,7 @@ const emptyBilling: SubscriptionBillingUi = {
 type GatedAnalysisPayload = {
   analysisId: string
   resultText: string
+  lockedPreview: LockedPreviewMetadata | null
 }
 
 type UsageUiState =
@@ -88,6 +91,8 @@ export default function AnalyzePageClient() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [analysisId, setAnalysisId] = useState<string | null>(null)
+  const [serverLockedPreview, setServerLockedPreview] = useState<LockedPreviewMetadata | null>(null)
+  const [resultIsPreview, setResultIsPreview] = useState(false)
   const [gatedAnalysis, setGatedAnalysis] = useState<GatedAnalysisPayload | null>(null)
   const [growthEmailNotice, setGrowthEmailNotice] = useState<string | null>(null)
   const [entitlements, setEntitlements] = useState<JobFitStoredEntitlements>(() => defaultEntitlements())
@@ -257,6 +262,45 @@ export default function AnalyzePageClient() {
     return 'none'
   }, [monthlyProActive, proReportGrantedAnalysisIds])
 
+  /** After Pro unlock or Monthly Pro, fetch full report text stored server-side. */
+  useEffect(() => {
+    if (!analysisId || !resultIsPreview) return
+
+    const entitled =
+      monthlyProActive ||
+      (usageUi.status === 'ready' && usageUi.monthlyProVerified) ||
+      mergedFullyUnlockedAnalysisIds.includes(analysisId) ||
+      proReportGrantedAnalysisIds.includes(analysisId)
+
+    if (!entitled) return
+
+    let cancelled = false
+    void fetch(`/api/analyze/result?analysisId=${encodeURIComponent(analysisId)}`, {
+      credentials: 'include',
+    })
+      .then(async (res) => {
+        const data = (await res.json()) as Record<string, unknown>
+        if (cancelled || !res.ok) return
+        const parsed = parseAnalyzeSuccessBody(data)
+        if (!parsed?.fullReportAccess) return
+        setResult(parsed.displayMessage)
+        setServerLockedPreview(null)
+        setResultIsPreview(false)
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    analysisId,
+    resultIsPreview,
+    monthlyProActive,
+    usageUi,
+    mergedFullyUnlockedAnalysisIds,
+    proReportGrantedAnalysisIds,
+  ])
+
   const maybeTrackFreeResultView = useCallback(
     (id: string, hadEmailGate: boolean) => {
       if (monthlyProActive) return
@@ -275,7 +319,9 @@ export default function AnalyzePageClient() {
       setGrowthEmailNotice(opts.emailSaveNotice)
       setResult(g.resultText)
       setAnalysisId(g.analysisId)
+      setServerLockedPreview(g.lockedPreview)
       setGatedAnalysis(null)
+      setResultIsPreview(true)
       shouldScrollToResultsRef.current = true
       maybeTrackFreeResultView(g.analysisId, true)
     },
@@ -301,6 +347,8 @@ export default function AnalyzePageClient() {
         setJd(data.report.jdText)
         setResult(data.report.resultText)
         setAnalysisId(data.report.analysisId)
+        setServerLockedPreview(null)
+        setResultIsPreview(false)
         setGatedAnalysis(null)
         setGrowthEmailNotice(null)
         autosaveIssuedRef.current.add(data.report.analysisId)
@@ -413,6 +461,8 @@ export default function AnalyzePageClient() {
     setLoading(true)
     setResult(null)
     setAnalysisId(null)
+    setServerLockedPreview(null)
+    setResultIsPreview(false)
     setGatedAnalysis(null)
     setGrowthEmailNotice(null)
 
@@ -466,25 +516,20 @@ export default function AnalyzePageClient() {
         return
       }
 
-      const msg = data.message
-      if (!msg || typeof msg !== 'string') {
+      const parsed = parseAnalyzeSuccessBody(data as Record<string, unknown>)
+      if (!parsed) {
         trackEvent('analysis_completed', { ok: false })
         const err = typeof data.error === 'string' ? data.error : 'Unexpected response from analyzer.'
         setResult(err)
         return
       }
 
-      const serverIdRaw = typeof data.analysisId === 'string' ? data.analysisId.trim() : ''
-      if (!serverIdRaw || !isAnalysisSessionId(serverIdRaw)) {
-        trackEvent('analysis_completed', { ok: false })
-        setResult('Analysis completed without a server report id. Please retry.')
-        return
-      }
-
-      const id = serverIdRaw
+      const { analysisId: id, displayMessage: msg, fullReportAccess: serverFullAccess, lockedPreview } =
+        parsed
       trackEvent('analysis_completed', { ok: true })
 
-      const serverFullAccess = data.fullReportAccess === true
+      setServerLockedPreview(lockedPreview)
+      setResultIsPreview(!serverFullAccess)
 
       /** Growth email gate is for free previews only — paid tiers and local dev skip it */
       const skipGrowthEmailGate =
@@ -494,7 +539,7 @@ export default function AnalyzePageClient() {
         serverFullAccess
 
       if (isFitAnalysisOutput(msg) && !skipGrowthEmailGate) {
-        setGatedAnalysis({ analysisId: id, resultText: msg })
+        setGatedAnalysis({ analysisId: id, resultText: msg, lockedPreview })
       } else {
         setGatedAnalysis(null)
         setAnalysisId(id)
@@ -587,7 +632,7 @@ export default function AnalyzePageClient() {
           setSubscribeMonthlyError(
             typeof data.error === 'string'
               ? data.error
-              : 'Configure DATABASE_URL, Stripe keys, and STRIPE_MONTHLY_PRO_PRICE_ID.'
+              : 'Checkout is temporarily unavailable.'
           )
           return
         }
@@ -641,6 +686,8 @@ export default function AnalyzePageClient() {
   const handleNewAnalysis = () => {
     setResult(null)
     setAnalysisId(null)
+    setServerLockedPreview(null)
+    setResultIsPreview(false)
     setGatedAnalysis(null)
     setGrowthEmailNotice(null)
     requestAnimationFrame(() => {
@@ -833,6 +880,7 @@ export default function AnalyzePageClient() {
               savedReportsDashboardAllowed={reportsDashboardAllowed}
               cvText={cv}
               jobDescription={jd}
+              serverLockedPreview={serverLockedPreview}
             />
         </div>
       </section>

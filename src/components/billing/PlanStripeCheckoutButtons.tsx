@@ -167,7 +167,7 @@ export function MonthlyProCheckoutButton({
             setErr(
               typeof data.error === 'string'
                 ? data.error
-                : 'Configure DATABASE_URL, Stripe keys, and STRIPE_MONTHLY_PRO_PRICE_ID for checkout.'
+                : 'Checkout is temporarily unavailable.'
             )
           }
           return

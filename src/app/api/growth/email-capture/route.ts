@@ -7,6 +7,8 @@ import {
   EMAIL_CAPTURE_CONSENT_VERSION,
 } from '@/lib/growth/emailCaptureConsent'
 import { prisma } from '@/lib/prisma'
+import { ERR_DATABASE_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { logServerError } from '@/lib/logging/safeLog.server'
 
 const MAX_EMAIL = 320
 
@@ -25,7 +27,7 @@ function isValidEmail(s: string): boolean {
  */
 export async function POST(req: Request) {
   if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ error: 'Database not configured.' }, { status: 503 })
+    return NextResponse.json({ error: ERR_DATABASE_NOT_CONFIGURED }, { status: 503 })
   }
 
   let body: unknown
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
       consentLabelSnapshot: EMAIL_CAPTURE_CONSENT_LABEL,
     })
   } catch (e) {
-    console.error('[growth/email-capture]', e)
+    logServerError('[growth/email-capture]', e)
     return NextResponse.json({ error: 'Could not save your details. You can still view your report.' }, { status: 500 })
   }
 }

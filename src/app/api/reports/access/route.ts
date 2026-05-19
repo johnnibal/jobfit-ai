@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
 import { requirePremiumAccess } from '@/lib/billing/requirePremiumAccess.server'
+import { logServerError } from '@/lib/logging/safeLog.server'
 
 export async function GET(req: Request) {
   try {
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
       : 'none'
     return NextResponse.json({ mode })
   } catch (e) {
-    console.error('[reports/access]', e)
+    logServerError('[reports/access]', e)
     return NextResponse.json({ error: 'Could not resolve library access.' }, { status: 503 })
   }
 }

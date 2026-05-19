@@ -11,6 +11,8 @@ import {
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { requirePremiumAccess } from '@/lib/billing/requirePremiumAccess.server'
 import { getOpenRouterApiKey } from '@/lib/openrouter/getOpenRouterApiKey'
+import { ERR_AI_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { logServerError } from '@/lib/logging/safeLog.server'
 
 const MIN_CHARS = 50
 
@@ -92,7 +94,7 @@ export async function POST(req: Request) {
       feature: 'cover_letter',
     })
   } catch (e) {
-    console.error('[cover-letter] entitlement check', e)
+    logServerError('[cover-letter] entitlement check', e)
     return NextResponse.json({ error: 'Could not verify subscription.' }, { status: 503 })
   }
 
@@ -102,10 +104,7 @@ export async function POST(req: Request) {
 
   const apiKey = getOpenRouterApiKey()
   if (!apiKey) {
-    return NextResponse.json(
-      { error: 'OPENROUTER_API_KEY (or OPENAI_API_KEY) is not configured on the server.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: ERR_AI_NOT_CONFIGURED }, { status: 500 })
   }
 
   const prompt = buildCoverLetterPrompt({
@@ -144,11 +143,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ letter })
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error('[cover-letter]', error.message)
-    } else {
-      console.error('[cover-letter]', error)
-    }
+    logServerError('[cover-letter] ai_provider', error)
     return NextResponse.json({ error: 'Cover letter generation failed.' }, { status: 500 })
   }
 }

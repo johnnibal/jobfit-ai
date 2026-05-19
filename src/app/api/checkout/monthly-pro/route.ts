@@ -9,12 +9,14 @@ import { prisma } from '@/lib/prisma'
 import { getPublicAppUrl } from '@/lib/appUrl'
 import { getStripe } from '@/lib/stripe'
 import { JOBFIT_MONTHLY_PRO_COOKIE, verifyMonthlyProEntitlementCookie } from '@/lib/billing/signedPremiumCookie'
+import { ERR_CHECKOUT_NOT_CONFIGURED, ERR_DATABASE_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { logServerError } from '@/lib/logging/safeLog.server'
 
 export async function POST() {
   try {
     if (!process.env.DATABASE_URL) {
       return NextResponse.json(
-        { error: 'Database is not configured.', code: 'NO_DATABASE', fallbackDemo: true },
+        { error: ERR_DATABASE_NOT_CONFIGURED, code: 'NO_DATABASE', fallbackDemo: true },
         { status: 503 }
       )
     }
@@ -26,8 +28,7 @@ export async function POST() {
     if (!stripe || !priceId?.trim() || !appUrl) {
       return NextResponse.json(
         {
-          error:
-            'Monthly checkout is not configured. Set STRIPE_SECRET_KEY, STRIPE_MONTHLY_PRO_PRICE_ID, and NEXT_PUBLIC_APP_URL.',
+          error: ERR_CHECKOUT_NOT_CONFIGURED,
           code: 'NO_STRIPE',
           fallbackDemo: true,
         },
@@ -80,13 +81,12 @@ export async function POST() {
     return NextResponse.json({ url: session.url })
   } catch (e) {
     if (e instanceof Stripe.errors.StripeError) {
-      console.error('[checkout/monthly-pro]', {
+      logServerError('[checkout/monthly-pro] stripe', e, {
         stripeType: e.type,
-        code: e.code,
-        message: e.message,
+        code: e.code ?? 'none',
       })
     } else {
-      console.error('[checkout/monthly-pro]', e instanceof Error ? e.message : 'unknown_error')
+      logServerError('[checkout/monthly-pro]', e)
     }
     return NextResponse.json({ error: 'Unable to start subscription checkout.' }, { status: 500 })
   }

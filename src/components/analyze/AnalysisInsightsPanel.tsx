@@ -32,6 +32,7 @@ import {
  type CoverLetterLanguageId,
  type CoverLetterToneId,
 } from '@/lib/coverLetterOptions'
+import type { LockedPreviewMetadata } from '@/lib/analyze/analysisResponseTypes'
 import { parseAnalysisSections, stripMatchScorePrefix, isFitAnalysisOutput } from '@/lib/parseAnalysis'
 import { buildJobFitReportPdfHtml } from '@/lib/pdf/jobFitReportPdf'
 import { useBillingSandboxEnvironment } from '@/lib/billing/useBillingSandboxEnvironment'
@@ -491,6 +492,8 @@ export type AnalysisInsightsPanelProps = {
  onNewAnalysis?: () => void
  cvText: string
  jobDescription: string
+ /** Server preview metadata when full report text was withheld (free tier). */
+ serverLockedPreview?: LockedPreviewMetadata | null
 }
 
 export function AnalysisInsightsPanel({
@@ -526,6 +529,7 @@ export function AnalysisInsightsPanel({
  onNewAnalysis,
  cvText,
  jobDescription,
+ serverLockedPreview = null,
 }: AnalysisInsightsPanelProps) {
  const [coverLetterText, setCoverLetterText] = useState('')
  const [coverLanguage, setCoverLanguage] = useState<CoverLetterLanguageId>('en')
@@ -613,9 +617,16 @@ export function AnalysisInsightsPanel({
  }, [sections, gatedFree])
 
  const lockedImprovementExtra = useMemo(() => {
- if (!sections || !gatedFree) return 0
+ if (!gatedFree) return 0
+ if (
+   serverLockedPreview &&
+   serverLockedPreview.totalSuggestionCount > FREE_VISIBLE_SUGGESTION_COUNT
+ ) {
+   return serverLockedPreview.totalSuggestionCount - FREE_VISIBLE_SUGGESTION_COUNT
+ }
+ if (!sections) return 0
  return Math.max(0, sections.resumeImprovementBullets.length - FREE_VISIBLE_SUGGESTION_COUNT)
- }, [sections, gatedFree])
+ }, [sections, gatedFree, serverLockedPreview])
 
  const coverInputsOk =
  cvText.trim().length >= 50 &&

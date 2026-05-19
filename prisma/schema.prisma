@@ -8,6 +8,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model AnalysisSnapshot {
+  analysisId String   @id @map("analysis_id")
+  resultText String   @map("result_text")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("analysis_snapshots")
+}
+
 model ProReportUnlock {
   id                      String   @id @default(cuid())
   analysisId              String   @unique @map("analysis_id")

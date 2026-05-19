@@ -2,6 +2,7 @@ import type Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
 import { classifyProReportCreditAnonymousBind } from '@/lib/billing/proReportPendingCreditBind.logic'
 import { persistProReportUnlockInTransaction } from '@/lib/billing/proReportUnlock'
+import { logServerError, logServerInfo, logServerWarn } from '@/lib/logging/safeLog.server'
 
 export type PendingCreditBindFailureCode =
   | 'ALREADY_CONSUMED'
@@ -98,7 +99,7 @@ export async function ensurePendingCreditBoundToAnonymousSession(params: {
       })
 
       if (cls === 'already_consumed') {
-        console.warn('[pro-report-credit] confirm on consumed row', { stripeSessionTail })
+        logServerWarn('[pro-report-credit] confirm on consumed row', { stripeSessionTail })
         return {
           ok: false,
           code: 'ALREADY_CONSUMED',
@@ -107,7 +108,7 @@ export async function ensurePendingCreditBoundToAnonymousSession(params: {
       }
 
       if (cls === 'anonymous_session_mismatch') {
-        console.warn('[pro-report-credit] anonymous session mismatch', {
+        logServerWarn('[pro-report-credit] anonymous session mismatch', {
           stripeSessionTail,
           storedAnonTail:
             typeof row.anonymousSessionId === 'string' ? row.anonymousSessionId.trim().slice(-8) : 'none',
@@ -157,7 +158,7 @@ export async function ensurePendingCreditBoundToAnonymousSession(params: {
       })
 
       if (clsAfter === 'already_bound_ok') {
-        console.info('[pro-report-credit] bind race resolved OK', {
+        logServerInfo('[pro-report-credit] bind race resolved OK', {
           stripeSessionTail,
           requestAnonTail: params.anonymousSessionId.trim().slice(-8),
         })
@@ -173,7 +174,7 @@ export async function ensurePendingCreditBoundToAnonymousSession(params: {
       }
 
       if (clsAfter === 'anonymous_session_mismatch') {
-        console.warn('[pro-report-credit] bind race surfaced mismatch', {
+        logServerWarn('[pro-report-credit] bind race surfaced mismatch', {
           stripeSessionTail,
           storedAnonTail:
             typeof refreshed.anonymousSessionId === 'string'
@@ -195,7 +196,7 @@ export async function ensurePendingCreditBoundToAnonymousSession(params: {
       }
     })
   } catch (e) {
-    console.error('[pro-report-credit] ensure/bind', e instanceof Error ? e.message : 'unknown')
+    logServerError('[pro-report-credit] ensure/bind', e)
     return {
       ok: false,
       code: 'PRISMA_ERROR',

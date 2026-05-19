@@ -10,12 +10,14 @@ import { requirePremiumAccess } from '@/lib/billing/requirePremiumAccess.server'
 import { prisma } from '@/lib/prisma'
 import { extractFitScore, guessJobPostingMeta } from '@/lib/reports/extractReportMeta'
 import { isMonthlyProCustomer } from '@/lib/reports/reportAccess.server'
+import { ERR_DATABASE_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { logServerError } from '@/lib/logging/safeLog.server'
 
 const MIN_CHARS = 50
 
 export async function GET(req: Request) {
   if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ error: 'Database not configured.' }, { status: 503 })
+    return NextResponse.json({ error: ERR_DATABASE_NOT_CONFIGURED }, { status: 503 })
   }
 
   try {
@@ -90,14 +92,14 @@ export async function GET(req: Request) {
     }))
     return NextResponse.json({ mode: 'pro_only' as const, reports })
   } catch (e) {
-    console.error('[reports GET]', e)
+    logServerError('[reports GET]', e)
     return NextResponse.json({ error: 'Could not load reports.' }, { status: 503 })
   }
 }
 
 export async function POST(req: Request) {
   if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ error: 'Database not configured.' }, { status: 503 })
+    return NextResponse.json({ error: ERR_DATABASE_NOT_CONFIGURED }, { status: 503 })
   }
 
   let body: unknown
@@ -223,7 +225,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true })
   } catch (e) {
-    console.error('[reports POST]', e)
+    logServerError('[reports POST]', e)
     return NextResponse.json({ error: 'Could not save report.' }, { status: 500 })
   }
 }

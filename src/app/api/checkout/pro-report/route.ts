@@ -17,14 +17,15 @@ import {
   verifyAnonymousCookie,
 } from '@/lib/usage/anonymousCookie'
 import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
+import { checkoutUnavailableNoDatabaseMessage, ERR_CHECKOUT_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { logServerError } from '@/lib/logging/safeLog.server'
 
 export async function POST(req: Request) {
   try {
     if (!process.env.DATABASE_URL) {
       return NextResponse.json(
         {
-          error:
-            'Prepaid Pro Report checkout needs DATABASE_URL. On localhost, use the Billing sandbox (+1 Pro credit) instead.',
+          error: checkoutUnavailableNoDatabaseMessage(),
           code: 'NO_DATABASE',
           fallbackDemo: true,
         },
@@ -39,8 +40,7 @@ export async function POST(req: Request) {
     if (!stripe || !priceId?.trim() || !appUrl) {
       return NextResponse.json(
         {
-          error:
-            'Checkout is not configured. Set STRIPE_SECRET_KEY, STRIPE_PRO_REPORT_PRICE_ID, and NEXT_PUBLIC_APP_URL.',
+          error: ERR_CHECKOUT_NOT_CONFIGURED,
           code: 'NO_STRIPE',
           fallbackDemo: true,
         },
@@ -134,10 +134,7 @@ export async function POST(req: Request) {
           anonymousSessionId,
         })
       } catch (bindErr) {
-        console.error(
-          '[checkout/pro-report] prebind pending credit failed',
-          bindErr instanceof Error ? bindErr.message.slice(0, 200) : 'unknown'
-        )
+        logServerError('[checkout/pro-report] prebind pending credit failed', bindErr)
         const res = NextResponse.json(
           { error: 'Could not reserve prepaid credit. Try again shortly.' },
           { status: 500 }
@@ -151,7 +148,7 @@ export async function POST(req: Request) {
     applyAnonymousSessionCookie(res, signAnonymousSessionId(anonymousSessionId))
     return res
   } catch (e) {
-    console.error('[checkout/pro-report]', e instanceof Error ? e.message : 'unknown_error')
+    logServerError('[checkout/pro-report]', e)
     return NextResponse.json({ error: 'Unable to start checkout. Try again shortly.' }, { status: 500 })
   }
 }

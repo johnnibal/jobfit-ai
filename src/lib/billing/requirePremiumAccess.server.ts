@@ -37,6 +37,7 @@ import { getAuthenticatedJobFitUserId } from '@/lib/auth/authenticatedUser'
 import { verifyMonthlyProStripeCustomer } from '@/lib/monetizationUsage.server'
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { buildBillingSessionPayload } from '@/lib/billing/billingSessionPayload.server'
+import { logServerError } from '@/lib/logging/safeLog.server'
 import {
   JOBFIT_MONTHLY_PRO_COOKIE,
   JOBFIT_PRO_REPORT_GRANTS_COOKIE,
@@ -201,7 +202,9 @@ export async function requirePremiumAccess(params: RequirePremiumAccessArgs): Pr
         decision = { allowed: false, reason: 'unknown_mode', plan: 'free' }
     }
   } catch (e) {
-    console.error(`[requirePremiumAccess] ${params.feature}`, params.mode ?? mode, e)
+    logServerError(`[requirePremiumAccess] ${params.feature}`, e, {
+      mode: String(params.mode ?? mode),
+    })
     return { allowed: false, reason: 'entitlement_check_failed', plan: 'free' }
   }
 

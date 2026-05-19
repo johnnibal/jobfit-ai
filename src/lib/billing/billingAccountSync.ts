@@ -1,5 +1,6 @@
 import type Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
+import { idPrefix, logServerWarn } from '@/lib/logging/safeLog.server'
 
 function readSubscriptionPeriod(subscription: Stripe.Subscription): {
   currentPeriodEnd: Date | null
@@ -22,7 +23,9 @@ export async function upsertBillingAccountFromSubscription(subscription: Stripe.
     typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id ?? ''
 
   if (!customerId) {
-    console.warn('[billing] Subscription missing customer id', subscription.id)
+    logServerWarn('[billing] subscription_missing_customer_id', {
+      subscriptionPrefix: idPrefix(subscription.id),
+    })
     return
   }
 

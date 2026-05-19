@@ -13,13 +13,17 @@ import { persistProReportUnlock } from '@/lib/billing/proReportUnlock'
 import { upsertProReportPendingCreditFromPaidSession } from '@/lib/billing/proReportPendingCredit.server'
 import { JOBFIT_STRIPE_PRO_REPORT_CREDIT } from '@/lib/billing/proReportStripeCheckoutFields'
 import { getStripe } from '@/lib/stripe'
+import { logServerError, logServerWarn } from '@/lib/logging/safeLog.server'
 
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET
   const stripe = getStripe()
 
   if (!secret || !stripe) {
-    console.error('[webhook/stripe] Missing STRIPE_WEBHOOK_SECRET or STRIPE_SECRET_KEY')
+    logServerError('[webhook/stripe] not_configured', 'missing_config', {
+      hasWebhookSecret: Boolean(secret),
+      hasStripeClient: Boolean(stripe),
+    })
     return NextResponse.json({ error: 'Webhook not configured.' }, { status: 503 })
   }
 
@@ -37,7 +41,7 @@ export async function POST(req: Request) {
   try {
     event = stripe.webhooks.constructEvent(rawBody, sig, secret)
   } catch (err) {
-    console.error('[webhook/stripe] Signature verification failed', err)
+    logServerError('[webhook/stripe] signature_verification_failed', err)
     return NextResponse.json({ error: 'Invalid signature.' }, { status: 400 })
   }
 
@@ -69,7 +73,7 @@ export async function POST(req: Request) {
                   : null
             await persistProReportUnlock(analysisId, session.id, sessionCustomer)
           } else {
-            console.warn('[webhook/stripe] Pro Report checkout missing analysisId', {
+            logServerWarn('[webhook/stripe] pro_report_checkout_missing_analysis_id', {
               sessionTail: typeof session.id === 'string' ? session.id.slice(-12) : 'unknown',
             })
           }
@@ -117,7 +121,7 @@ export async function POST(req: Request) {
         break
     }
   } catch (e) {
-    console.error('[webhook/stripe] Handler error', e)
+    logServerError('[webhook/stripe] handler', e)
     return NextResponse.json({ error: 'Webhook handler failed.' }, { status: 500 })
   }
 

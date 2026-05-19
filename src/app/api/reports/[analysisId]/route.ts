@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { requirePremiumAccess } from '@/lib/billing/requirePremiumAccess.server'
 import { prisma } from '@/lib/prisma'
+import { logServerError } from '@/lib/logging/safeLog.server'
 
 export async function GET(req: Request, ctx: { params: Promise<{ analysisId: string }> }) {
   const { analysisId } = await ctx.params
@@ -49,7 +50,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ analysisId: str
       },
     })
   } catch (e) {
-    console.error('[reports/analysisId GET]', e)
+    logServerError('[reports/analysisId GET]', e)
     return NextResponse.json({ error: 'Could not load report.' }, { status: 503 })
   }
 }
@@ -85,7 +86,7 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ analysisId: 
 
     return NextResponse.json({ ok: true })
   } catch (e) {
-    console.error('[reports/analysisId DELETE]', e)
+    logServerError('[reports/analysisId DELETE]', e)
     return NextResponse.json({ error: 'Could not delete report.' }, { status: 503 })
   }
 }

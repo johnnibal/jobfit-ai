@@ -7,6 +7,8 @@ import { attachProReportEntitlementTokenCookie } from '@/lib/billing/applyPremiu
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { JOBFIT_PRO_REPORT_ENTITLEMENT_COOKIE } from '@/lib/billing/proReportEntitlementToken.server'
 import { prisma } from '@/lib/prisma'
+import { ERR_DATABASE_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { logServerError } from '@/lib/logging/safeLog.server'
 
 /**
  * If this analysis has a persisted Pro unlock (Stripe webhook landed first), mint/merge HttpOnly entitlement cookie.
@@ -14,7 +16,7 @@ import { prisma } from '@/lib/prisma'
  */
 export async function POST(req: Request) {
   if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ error: 'Database not configured.' }, { status: 503 })
+    return NextResponse.json({ error: ERR_DATABASE_NOT_CONFIGURED }, { status: 503 })
   }
 
   let body: unknown
@@ -59,14 +61,14 @@ export async function POST(req: Request) {
       )
       return res
     } catch (e) {
-      console.error('[claim-pro-report-cookie] mint entitlement', e)
+      logServerError('[claim-pro-report-cookie] mint entitlement', e)
       return NextResponse.json(
         { error: 'Could not issue entitlement cookie. Check server configuration.' },
         { status: 503 }
       )
     }
   } catch (e) {
-    console.error('[claim-pro-report-cookie]', e)
+    logServerError('[claim-pro-report-cookie]', e)
     return NextResponse.json({ error: 'Could not verify unlock.' }, { status: 500 })
   }
 }

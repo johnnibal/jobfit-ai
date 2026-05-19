@@ -64,7 +64,7 @@ export function entitlementSecretStrict(): string {
   if (process.env.NODE_ENV !== 'production') {
     if (!devFallbackWarned) {
       console.warn(
-        `[jobfit] ${JOBFIT_ENTITLEMENT_SECRET_ENV} unset; signing Pro Report entitlement with JOBFIT_USAGE_SECRET (development only).`
+        '[jobfit] Pro Report entitlement signing secret unset; using development-only fallback.'
       )
       devFallbackWarned = true
     }

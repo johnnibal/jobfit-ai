@@ -37,6 +37,13 @@ import {
 } from '@/lib/usage/anonymousCookie'
 import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
 import { getOpenRouterApiKey } from '@/lib/openrouter/getOpenRouterApiKey'
+import { ERR_AI_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { logServerError, logServerWarn } from '@/lib/logging/safeLog.server'
+import {
+  buildFullAnalyzeResponse,
+  buildPreviewAnalyzeResponse,
+} from '@/lib/analyze/buildAnalysisPreview'
+import { persistAnalysisSnapshot } from '@/lib/analyze/analysisSnapshot.server'
 
 function buildAnalysisPrompt(cv: string, jd: string) {
   return `
@@ -149,7 +156,7 @@ export async function POST(req: Request) {
   }
 
   if (!apiKey) {
-    return respond({ error: 'OPENROUTER_API_KEY (or OPENAI_API_KEY) is not configured on the server.' }, 500)
+    return respond({ error: ERR_AI_NOT_CONFIGURED }, 500)
   }
 
   const authenticatedUserId = await getAuthenticatedJobFitUserId()
@@ -166,7 +173,7 @@ export async function POST(req: Request) {
     subject = resolved.subject
     mode = resolved.mode
   } catch (e) {
-    console.error('[analyze] resolve quota subject', e)
+    logServerError('[analyze] resolve quota subject', e)
     return respond({ error: 'Could not resolve usage quota.' }, 503)
   }
 
@@ -196,7 +203,7 @@ export async function POST(req: Request) {
           anonymousSessionId,
         })
         if (!creditRow) {
-          console.warn('[analyze] prepaid credit cookie present but not consumable', {
+          logServerWarn('[analyze] prepaid credit cookie present but not consumable', {
             creditTail: creditId.slice(-8),
           })
           return respond(
@@ -210,7 +217,7 @@ export async function POST(req: Request) {
         }
         prepaidCreditRowId = creditRow.id
       } else {
-        console.error('[analyze] quota increment', e)
+        logServerError('[analyze] quota increment', e)
         return respond({ error: 'Could not verify usage quota.' }, 503)
       }
     }
@@ -243,6 +250,7 @@ export async function POST(req: Request) {
     const message = typeof rawMessage === 'string' ? rawMessage.trim() : ''
 
     const fullReportAccess = mode === 'monthly' || prepaidCreditRowId != null
+    const accessTier = mode === 'monthly' ? 'monthly_pro' : prepaidCreditRowId != null ? 'pro_report' : 'free'
 
     if (!message) {
       if (quotaConsumed && !usageLimitsDisabled()) {
@@ -250,6 +258,20 @@ export async function POST(req: Request) {
       }
       return respond({ error: 'AI analysis returned an empty response.', analysisId }, 502)
     }
+
+    try {
+      await persistAnalysisSnapshot(analysisId, message)
+    } catch (snapErr) {
+      logServerError('[analyze] persist snapshot', snapErr)
+    }
+
+    const successPayload = fullReportAccess
+      ? buildFullAnalyzeResponse(
+          analysisId,
+          message,
+          accessTier === 'monthly_pro' ? 'monthly_pro' : 'pro_report'
+        )
+      : buildPreviewAnalyzeResponse(analysisId, message)
 
     if (prepaidCreditRowId) {
       try {
@@ -259,7 +281,7 @@ export async function POST(req: Request) {
           analysisId,
         })
       } catch (ce) {
-        console.error('[analyze] prepaid credit consume', ce instanceof Error ? ce.message : 'unknown')
+        logServerError('[analyze] prepaid credit consume', ce)
         if (quotaConsumed && !usageLimitsDisabled()) {
           await decrementAnalysisUsage(subject, mode).catch(() => {})
         }
@@ -269,7 +291,7 @@ export async function POST(req: Request) {
         )
       }
 
-      const res = NextResponse.json({ message, analysisId, fullReportAccess }, { status: 200 })
+      const res = NextResponse.json(successPayload, { status: 200 })
       applyAnonymousSessionCookie(res, signedAnon)
       try {
         attachProReportEntitlementTokenCookie(
@@ -279,7 +301,7 @@ export async function POST(req: Request) {
         )
         clearProReportPendingCreditCookie(res)
       } catch (cookieErr) {
-        console.error('[analyze] entitlement after prepaid', cookieErr instanceof Error ? cookieErr.message : 'unknown')
+        logServerError('[analyze] entitlement after prepaid', cookieErr)
         return respond(
           { error: 'Unlock saved but browser cookies could not be updated. Use “claim” from account tools.', analysisId },
           500
@@ -288,18 +310,14 @@ export async function POST(req: Request) {
       return res
     }
 
-    return respond({ message, analysisId, fullReportAccess }, 200)
+    return respond(successPayload, 200)
   } catch (error: unknown) {
     if (quotaConsumed && !usageLimitsDisabled()) {
       await decrementAnalysisUsage(subject, mode).catch(() => {})
     }
 
-    if (error instanceof Error) {
-      console.error('OpenRouter API Error:', error.message)
-    } else {
-      console.error('Unknown error:', error)
-    }
+    logServerError('[analyze] ai_provider', error)
 
-    return respond({ error: 'OpenRouter AI analysis failed.', analysisId }, 500)
+    return respond({ error: 'AI analysis failed. Please try again shortly.', analysisId }, 500)
   }
 }
