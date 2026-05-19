@@ -90,7 +90,7 @@ export default function SubscriptionSuccessClient() {
 
  {phase === 'ok' ? (
  <>
- <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium uppercase tracking-wide text-emerald-800">
+ <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-zinc-100 px-3 py-1 text-xs font-medium uppercase tracking-wide text-zinc-800">
  Subscription active
  </div>
  <h1 className="text-2xl font-semibold text-zinc-900">{SUCCESS_MONTHLY_PRO_ACTIVE_TITLE}</h1>

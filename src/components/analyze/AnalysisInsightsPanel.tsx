@@ -16,11 +16,8 @@ import {
  type AnalysisPermissionContext,
 } from '@/lib/analysisPermissions'
 import {
- COPY_INSIGHTS_EMPTY_PAID_PRO_RUN,
  COPY_FREE_TIER_PRIMARY_LINE,
- COPY_MONTHLY_PRO_INCLUDES_LONG,
  COPY_MONTHLY_PRO_TAGLINE,
- COPY_PRO_REPORT_INCLUDES,
  COPY_PRO_REPORT_ONELINE,
  FREE_VISIBLE_SUGGESTION_COUNT,
  LABEL_BUY_PRO_REPORT,
@@ -38,8 +35,14 @@ import {
 import { parseAnalysisSections, stripMatchScorePrefix, isFitAnalysisOutput } from '@/lib/parseAnalysis'
 import { buildJobFitReportPdfHtml } from '@/lib/pdf/jobFitReportPdf'
 import { useBillingSandboxEnvironment } from '@/lib/billing/useBillingSandboxEnvironment'
+import { localBillingSandboxActive } from '@/lib/billing/localBillingSandbox'
 import { trackEvent } from '@/lib/analytics/track'
-import { btnPrimary, btnSecondary, card, cardPadding, lockedPanel, resultSection, scoreCard, scoreValue } from '@/components/ui/theme'
+import { btnGhost, btnPrimary, btnPrimaryBrick, btnSecondary, badgeNeutral, card, cardPadding, insightCard, insightCardSubtle, insightHeading, labelCaps, lockedPanel, resultSection, textMuted } from '@/components/ui/theme'
+import {
+  getMatchScoreBlurb,
+  getMatchScoreHeadline,
+  MatchScoreGauge,
+} from '@/components/analyze/MatchScoreGauge'
 
 const SHORT_SUMMARY_MAX_CHARS = 320
 
@@ -48,22 +51,81 @@ const MISSING_ANALYSIS_UNLOCK_MSG = 'Run an analysis first to apply a demo Pro R
 const PREPAID_PRO_REPORT_BROWSER_HINT =
  'Buy once on this browser. Your next successful analyzer run unlocks that result as full Pro Report automatically.'
 
-function ProReportMonthlyComparison() {
+function UpgradeOptionsCard({
+ subscriberMonthlyPro,
+ monthlyProActive,
+ analysisId,
+ proReportCreditsCount,
+ onApplyProReportCredit,
+ onSubscribeMonthly,
+ onDemoEnableMonthlyPro,
+ subscribeMonthlyBusy,
+ checkoutSurface,
+ onLocalDevProReportFallback,
+}: {
+ subscriberMonthlyPro: boolean
+ monthlyProActive: boolean
+ analysisId: string | null
+ proReportCreditsCount: number
+ onApplyProReportCredit: () => void
+ onSubscribeMonthly: () => void
+ onDemoEnableMonthlyPro?: () => void
+ subscribeMonthlyBusy: boolean
+ checkoutSurface: string
+ onLocalDevProReportFallback?: () => void
+}) {
+ if (subscriberMonthlyPro) return null
+
+ const localDevBilling = useBillingSandboxEnvironment()
+
+ const handleMonthlyClick = () => {
+ if (localDevBilling) {
+ onDemoEnableMonthlyPro?.()
+ return
+ }
+ onSubscribeMonthly()
+ }
+
+ const monthlyCtaLabel = localDevBilling
+ ? 'Enable Monthly Pro (local demo)'
+ : subscribeMonthlyBusy
+ ? 'Opening checkout…'
+ : LABEL_SUBSCRIBE_MONTHLY_PRO
+
  return (
- <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
- <div className="rounded-2xl border border-zinc-300 bg-zinc-100 p-4">
- <p className="text-sm font-semibold text-zinc-900">
- Pro Report · €{PRICE_PRO_REPORT_EUR} one-time
+ <div className="space-y-5">
+ <div>
+ <p className="text-sm font-semibold text-onyx">Monthly Pro · €{PRICE_MONTHLY_PRO_EUR}/month</p>
+ <p className="mt-1.5 text-sm leading-relaxed text-dim">{COPY_MONTHLY_PRO_TAGLINE}</p>
+ {monthlyProActive ? (
+ <p className="mt-3 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-900">
+ Monthly Pro is active on this browser.
  </p>
- <p className="mt-2 text-xs leading-relaxed text-zinc-500">{COPY_PRO_REPORT_ONELINE}</p>
- <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">{COPY_PRO_REPORT_INCLUDES}</p>
+ ) : (
+ <button
+ type="button"
+ disabled={subscribeMonthlyBusy && !localDevBilling}
+ onClick={handleMonthlyClick}
+ className={`${btnPrimary} relative z-10 mt-3 w-full`}
+ >
+ {monthlyCtaLabel}
+ </button>
+ )}
  </div>
- <div className="rounded-2xl border border-zinc-300 bg-blue-50 p-4">
- <p className="text-sm font-semibold text-zinc-900">
- Monthly Pro · €{PRICE_MONTHLY_PRO_EUR}/month
- </p>
- <p className="mt-2 text-[13px] font-medium leading-relaxed text-zinc-700/90">{COPY_MONTHLY_PRO_TAGLINE}</p>
- <p className="mt-2 text-xs leading-relaxed text-zinc-500">{COPY_MONTHLY_PRO_INCLUDES_LONG}</p>
+ <div className="border-t border-ash/35 pt-5">
+ <p className="text-sm font-semibold text-onyx">Pro Report · €{PRICE_PRO_REPORT_EUR} one-time</p>
+ <p className="mt-1.5 text-sm leading-relaxed text-dim">{COPY_PRO_REPORT_ONELINE}</p>
+ <div className="mt-3">
+ <UnlockProReportCta
+ fullWidth
+ subscriberMonthlyPro={subscriberMonthlyPro}
+ analysisId={analysisId}
+ proReportCreditsCount={proReportCreditsCount}
+ onApplyProReportCredit={onApplyProReportCredit}
+ checkoutSurface={checkoutSurface}
+ onLocalDevCheckoutFallback={onLocalDevProReportFallback}
+ />
+ </div>
  </div>
  </div>
  )
@@ -87,57 +149,16 @@ function truncatePreview(text: string, maxChars = 140): string {
 
 function SectionHeading({ children }: { children: ReactNode }) {
  return (
- <h3 className="text-sm font-semibold text-zinc-900">{children}</h3>
+ <h3 className="text-sm font-semibold text-onyx">{children}</h3>
  )
 }
 
 function LockedHint({ label }: { label: string }) {
  return (
- <span className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
+ <span className="inline-flex items-center gap-1 rounded-md border border-ash/60 bg-ash/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-dim">
  <LockIcon className="h-3 w-3" />
  {label}
  </span>
- )
-}
-
-function PremiumUpgradeRow({
- subscriberMonthlyPro,
- analysisId,
- proReportCreditsCount,
- onApplyProReportCredit,
- onSubscribeMonthly,
- subscribeMonthlyBusy,
- checkoutSurface,
-}: {
- subscriberMonthlyPro: boolean
- analysisId: string | null
- proReportCreditsCount: number
- onApplyProReportCredit: () => void
- onSubscribeMonthly: () => void
- subscribeMonthlyBusy: boolean
- checkoutSurface: string
-}) {
- if (subscriberMonthlyPro) return null
- return (
- <div className="space-y-2">
- <UnlockProReportCta
- emphasize
- fullWidth
- subscriberMonthlyPro={subscriberMonthlyPro}
- analysisId={analysisId}
- proReportCreditsCount={proReportCreditsCount}
- onApplyProReportCredit={onApplyProReportCredit}
- checkoutSurface={checkoutSurface}
- />
- <button
- type="button"
- disabled={subscribeMonthlyBusy}
- onClick={onSubscribeMonthly}
- className={`${btnSecondary} w-full`}
- >
- {subscribeMonthlyBusy ? 'Opening checkout…' : LABEL_SUBSCRIBE_MONTHLY_PRO}
- </button>
- </div>
  )
 }
 
@@ -180,6 +201,7 @@ function UnlockProReportCta({
  variant = 'primary',
  fullWidth,
  emphasize,
+ onLocalDevCheckoutFallback,
 }: {
  /** Active Stripe Monthly Pro billing session — omit Pro Report one-time SKU. */
  subscriberMonthlyPro: boolean
@@ -191,6 +213,7 @@ function UnlockProReportCta({
  fullWidth?: boolean
  /** Larger touch target and text for high-visibility placement. */
  emphasize?: boolean
+ onLocalDevCheckoutFallback?: () => void
 }) {
  const [stripeBusy, setStripeBusy] = useState(false)
  const [stripeErr, setStripeErr] = useState<string | null>(null)
@@ -218,6 +241,16 @@ function UnlockProReportCta({
  return
  }
 
+ if (localBillingSandboxActive() && onLocalDevCheckoutFallback) {
+ trackEvent('stripe_checkout_started', {
+ product: analysisId ? 'pro_report' : 'pro_report_credit',
+ surface: checkoutSurface,
+ })
+ onLocalDevCheckoutFallback()
+ setStripeErr(null)
+ return
+ }
+
  const body: Record<string, unknown> = {}
  if (analysisId) body.analysisId = analysisId
  if (appliedPromo) body.promoCode = appliedPromo.code
@@ -240,9 +273,14 @@ function UnlockProReportCta({
 
  if (!res.ok) {
  if (res.status === 503 && data.fallbackDemo) {
+ if (billingSandboxVisible && onLocalDevCheckoutFallback) {
+ onLocalDevCheckoutFallback()
+ setStripeErr(null)
+ return
+ }
  if (billingSandboxVisible) {
  scrollToSandbox()
- setStripeErr(typeof data.error === 'string' ? data.error : 'Billing unavailable. Use the sandbox below.')
+ setStripeErr('Local dev: use the Billing sandbox below (+1 Pro credit) instead of Stripe checkout.')
  } else {
  setStripeErr(
  typeof data.error === 'string'
@@ -283,7 +321,7 @@ function UnlockProReportCta({
 
  const base =
  variant === 'primary'
- ? btnPrimary.replace('inline-flex', 'inline-flex w-full')
+ ? btnPrimaryBrick.replace('inline-flex', 'inline-flex w-full')
  : btnSecondary.replace('inline-flex', 'inline-flex w-full')
 
  const sizeClass = emphasize
@@ -314,7 +352,7 @@ function UnlockProReportCta({
  onApplied={setAppliedPromo}
  />
  {appliedPromo ? (
- <p className="mt-2 text-center text-[10px] text-zinc-500">
+ <p className="mt-2 text-center text-[10px] text-dim">
  <span className="line-through opacity-70">€{appliedPromo.originalEur.toFixed(2)}</span>{' '}
  <span className="tabular-nums text-emerald-700">
  −{appliedPromo.percentOff}% · €{appliedPromo.discountedEur.toFixed(2)} due
@@ -348,7 +386,7 @@ function UnlockProReportCta({
  {stripeErr ? (
  <p className="mt-2 text-center text-[12px] leading-relaxed text-amber-800">{stripeErr}</p>
  ) : !analysisId ? (
- <p className="mt-2 text-center text-sm leading-snug text-zinc-700">{PREPAID_PRO_REPORT_BROWSER_HINT}</p>
+ <p className="mt-2 text-center text-sm leading-snug text-dim">{PREPAID_PRO_REPORT_BROWSER_HINT}</p>
  ) : null}
  </div>
  )
@@ -364,24 +402,24 @@ function LockedFeaturePreviewCard({
  onActivate?: () => void
 }) {
  const shell =
- 'group relative flex w-full flex-col rounded-lg border border-zinc-200 bg-white p-4 transition hover:border-zinc-300'
+ 'group relative flex w-full flex-col rounded-lg border border-ash/60 bg-white p-4 transition hover:border-ash/70'
 
  const inner = (
  <>
  <div className="relative flex flex-1 flex-col">
  <div className="flex items-start justify-between gap-2">
- <h4 className="text-sm font-semibold text-zinc-900">{title}</h4>
+ <h4 className="text-sm font-semibold text-onyx">{title}</h4>
  <LockedHint label={onActivate ? 'Locked' : 'Preview'} />
  </div>
  <ul className="mt-3 space-y-1.5">
  {previewLines.map((line, i) => (
- <li key={i} className="text-xs leading-relaxed text-zinc-500">
+ <li key={i} className="text-xs leading-relaxed text-dim">
  {line}
  </li>
  ))}
  </ul>
  {onActivate ? (
- <p className="mt-3 text-xs text-zinc-500">Unlock with Pro Report or Monthly Pro.</p>
+ <p className="mt-3 text-xs text-dim">Unlock with Pro Report or Monthly Pro.</p>
  ) : null}
  </div>
  </>
@@ -392,7 +430,7 @@ function LockedFeaturePreviewCard({
  <button
  type="button"
  onClick={onActivate}
- className={`${shell} cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2`}
+ className={`${shell} cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-brick/30 focus-visible:ring-offset-2`}
  >
  {inner}
  </button>
@@ -431,6 +469,7 @@ export type AnalysisInsightsPanelProps = {
  billing: SubscriptionBillingUi
  onRefreshBilling: () => void
  onSubscribeMonthly: () => void
+ onDemoEnableMonthlyPro?: () => void
  subscribeMonthlyBusy: boolean
  subscribeMonthlyError: string | null
  onOpenCustomerPortal: () => void
@@ -439,12 +478,17 @@ export type AnalysisInsightsPanelProps = {
  onApplyProReportCredit: () => void
  onDemoAddProCredit: () => void
  onDemoToggleMonthlyPro: () => void
+ onLocalDevProReportFallback?: () => void
  /** Opens conversion modal — omit when Monthly Pro already grants full access. */
  onOpenUpgradeModal?: () => void
  /** Monthly Pro or Pro-report purchasers may open /dashboard/reports. */
  savedReportsDashboardAllowed?: boolean
  /** When set and `result` is null, shown instead of the default “marketing” empty placeholders. */
  emptyStateOverride?: ReactNode
+ /** When false, the left column has no input form — results sit in row 1. */
+ inputsColumnVisible?: boolean
+ /** Shown on the fit report when the input form is hidden. */
+ onNewAnalysis?: () => void
  cvText: string
  jobDescription: string
 }
@@ -465,6 +509,7 @@ export function AnalysisInsightsPanel({
  billing,
  onRefreshBilling,
  onSubscribeMonthly,
+ onDemoEnableMonthlyPro,
  subscribeMonthlyBusy,
  subscribeMonthlyError,
  onOpenCustomerPortal,
@@ -473,9 +518,12 @@ export function AnalysisInsightsPanel({
  onApplyProReportCredit,
  onDemoAddProCredit,
  onDemoToggleMonthlyPro,
+ onLocalDevProReportFallback,
  onOpenUpgradeModal,
  savedReportsDashboardAllowed = false,
  emptyStateOverride,
+ inputsColumnVisible = true,
+ onNewAnalysis,
  cvText,
  jobDescription,
 }: AnalysisInsightsPanelProps) {
@@ -533,6 +581,20 @@ export function AnalysisInsightsPanel({
  .find((l) => l.trim().length > 0)
  return fallbackLine?.trim() ?? ''
  }, [sections, result, gatedFree])
+
+ const matchScoreHeadline = useMemo(
+  () => (matchScore !== null ? getMatchScoreHeadline(matchScore) : ''),
+  [matchScore]
+ )
+
+ const matchScoreDescription = useMemo(() => {
+  if (matchScore === null) return ''
+  const firstSentence = verdictSummary.split(/(?<=[.!?])\s+/)[0]?.trim()
+  if (firstSentence && firstSentence.length > 24) {
+    return firstSentence.endsWith('.') ? firstSentence : `${firstSentence}.`
+  }
+  return getMatchScoreBlurb(matchScore)
+ }, [matchScore, verdictSummary])
 
  const showConversionUpsell = Boolean(onOpenUpgradeModal && gatedFree && result)
 
@@ -768,204 +830,96 @@ export function AnalysisInsightsPanel({
  }, [sections, lockedImprovementExtra])
 
  const hasMainContent = Boolean(result || emptyStateOverride)
- const insightCard = 'rounded-xl border border-zinc-200 bg-white p-4 shadow-sm'
+ const resultOrderClass = inputsColumnVisible ? 'order-2' : 'order-1'
+ const resultRowClass = inputsColumnVisible ? 'lg:row-start-2' : 'lg:row-start-1'
+ const sidebarOrderClass = inputsColumnVisible ? 'order-3' : 'order-2'
+ const sidebarRowSpanClass = inputsColumnVisible && hasMainContent ? 'lg:row-span-2' : ''
+ const sidebarLayoutClass = hasMainContent
+   ? `${sidebarOrderClass} lg:order-none lg:col-start-2 lg:row-start-1 ${sidebarRowSpanClass} lg:sticky lg:top-8 lg:self-start lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:overscroll-contain`.trim()
+   : 'order-2 lg:col-start-2 lg:sticky lg:top-8 lg:self-start lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:overscroll-contain'
 
  const sidebarPanel = (
- <div className="flex flex-col gap-3">
- <div className={insightCard}>
- <div className="flex flex-wrap items-start justify-between gap-2">
- <h2 className="text-base font-semibold text-zinc-900">Insights</h2>
- <div className="flex flex-wrap items-center gap-2">
- <span className="rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-700">
- {permissionBadge}
- </span>
- {billingSandboxVisible && proReportCreditsCount > 0 ? (
- <span className="rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-medium text-zinc-700">
- Credits · {proReportCreditsCount}
- </span>
- ) : null}
- </div>
- </div>
- {!result ? (
- <p className="mt-2 text-xs leading-relaxed text-zinc-600">
- <span className="font-medium text-zinc-800">Free</span>: {COPY_FREE_TIER_PRIMARY_LINE}.{' '}
- <span className="font-medium text-zinc-800">Pro Report</span> (€{PRICE_PRO_REPORT_EUR}) ·{' '}
- <span className="font-medium text-zinc-800">Monthly Pro</span> (€{PRICE_MONTHLY_PRO_EUR}/mo).
- </p>
- ) : null}
- </div>
-
+ <div className="flex flex-col gap-4">
+ {/* Usage */}
  <div className={insightCard}>
  <div className="flex flex-wrap items-center justify-between gap-2">
- <span className="text-sm font-semibold text-zinc-900">
- {quotaPeriod === 'month' ? 'Usage this month' : 'Usage today'}
- </span>
- <span className="tabular-nums text-sm text-zinc-700">
- {quotaLoading ? (
- '…'
- ) : (
- <>
- <span className="font-semibold text-indigo-700">{quotaRemaining}</span>
- <span className="text-zinc-500"> left · </span>
- {Math.min(quotaUsed, quotaCap)} / {quotaCap}
- </>
- )}
- </span>
- </div>
- {quotaError ? (
- <p className="mt-2 text-xs leading-relaxed text-amber-800">{quotaError}</p>
- ) : (
- <p className="mt-2 text-xs leading-relaxed text-zinc-500">
- {quotaPeriod === 'month'
- ? `${quotaCap} analyses per UTC month on Monthly Pro.`
- : `Free tier: ${COPY_FREE_TIER_PRIMARY_LINE}.`}
- </p>
- )}
- </div>
-
- <div className={insightCard}>
- <div className="flex flex-wrap items-center justify-between gap-2">
- <span className="text-sm font-semibold text-zinc-900">Plan status</span>
+ <h2 className={insightHeading}>Usage</h2>
+ <div className="flex items-center gap-2">
+ <span className={`${badgeNeutral} normal-case tracking-normal`}>{permissionBadge}</span>
  <button
  type="button"
  onClick={onRefreshBilling}
- className="text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:underline disabled:opacity-40"
+ className="text-xs font-medium text-dim hover:text-onyx hover:underline disabled:opacity-40"
  disabled={billing.loading}
  >
  Refresh
  </button>
  </div>
- {!monthlyProActive && !result ? (
- <div className="mt-3 space-y-3 border-t border-zinc-100 pt-3">
- <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">Compare upgrades</p>
- <ProReportMonthlyComparison />
- <UnlockProReportCta
- emphasize
- fullWidth
- checkoutSurface="insights_billing_compare"
- subscriberMonthlyPro={subscriberMonthlyPro}
- analysisId={analysisId}
- proReportCreditsCount={proReportCreditsCount}
- onApplyProReportCredit={onApplyProReportCredit}
- />
  </div>
- ) : null}
- {billing.error ? <p className="mt-2 text-xs leading-relaxed text-amber-800">{billing.error}</p> : null}
- {billing.loading ? <p className="mt-2 text-xs text-zinc-500">Loading…</p> : null}
- {!billing.loading && billing.fetched ? (
- <div className="mt-2 space-y-1.5 text-xs leading-relaxed text-zinc-600">
- <p>
- Monthly Pro:{' '}
- <span className={billing.monthlyProActive ? 'font-medium text-indigo-700' : 'font-medium text-zinc-500'}>
- {billing.monthlyProActive ? 'Active' : 'Not active'}
- </span>
- {billing.subscriptionStatus && billing.subscriptionStatus !== 'none' ? (
- <span className="text-zinc-500"> · {billing.subscriptionStatus}</span>
- ) : null}
+ <p className="mt-3 tabular-nums text-sm text-onyx">
+ {quotaLoading ? (
+ '…'
+ ) : (
+ <>
+ <span className="text-2xl font-semibold">{quotaRemaining}</span>
+ <span className="text-dim"> left · </span>
+ {Math.min(quotaUsed, quotaCap)} / {quotaCap}
+ </>
+ )}
  </p>
- {billing.email ? <p className="text-zinc-500">Billing: {billing.email}</p> : null}
- {billing.lastPaymentFailedAt ? (
- <p className="text-rose-700">Payment failed. Update billing in the portal.</p>
- ) : null}
- {billing.cancelAtPeriodEnd && billing.currentPeriodEnd ? (
- <p className="text-amber-800">
- Ends {new Date(billing.currentPeriodEnd).toLocaleDateString()}.
+ <p className={`mt-2 ${textMuted}`}>
+ {quotaPeriod === 'month'
+ ? `${quotaCap} analyses per UTC month on Monthly Pro.`
+ : `Free tier: ${COPY_FREE_TIER_PRIMARY_LINE}.`}
+ </p>
+ {monthlyProActive && !subscriberMonthlyPro ? (
+ <p className="mt-2 text-sm leading-relaxed text-emerald-800">
+ Monthly Pro enabled in local demo. Use Billing sandbox below to turn it off.
  </p>
  ) : null}
- </div>
- ) : null}
- <div className="mt-3 flex flex-wrap gap-2">
- {!billing.monthlyProActive ? (
- <button
- type="button"
- disabled={subscribeMonthlyBusy}
- onClick={onSubscribeMonthly}
- className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
- >
- {subscribeMonthlyBusy ? 'Opening…' : LABEL_SUBSCRIBE_MONTHLY_PRO}
- </button>
- ) : null}
- {billing.subscriptionStatus !== 'none' ? (
+ {quotaError ? <p className="mt-2 text-sm leading-relaxed text-amber-800">{quotaError}</p> : null}
+ {subscriberMonthlyPro && billing.subscriptionStatus !== 'none' ? (
  <button
  type="button"
  disabled={portalBusy}
  onClick={onOpenCustomerPortal}
- className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+ className={`${btnGhost} mt-3 w-full text-sm`}
  >
  {portalBusy ? 'Opening…' : 'Manage subscription'}
  </button>
  ) : null}
- </div>
- {subscribeMonthlyError ? (
- <p className="mt-2 text-[11px] leading-relaxed text-amber-800">{subscribeMonthlyError}</p>
- ) : null}
- {portalError ? <p className="mt-2 text-[11px] leading-relaxed text-amber-800">{portalError}</p> : null}
+ {portalError ? <p className="mt-2 text-sm leading-relaxed text-amber-800">{portalError}</p> : null}
  </div>
 
- {result && gatedFree && !subscriberMonthlyPro ? (
+ {/* Single upgrade card */}
+ {!subscriberMonthlyPro && !monthlyProActive ? (
  <div className={insightCard}>
- <p className="text-sm font-semibold text-zinc-900">Unlock full report</p>
- <p className="mt-1 text-xs leading-relaxed text-zinc-600">
- {COPY_PRO_REPORT_ONELINE}. €{PRICE_PRO_REPORT_EUR} one-time.
- </p>
- <div className="mt-3">
- <PremiumUpgradeRow
+ <h2 className={insightHeading}>Upgrade</h2>
+ <div className="mt-4">
+ <UpgradeOptionsCard
  subscriberMonthlyPro={subscriberMonthlyPro}
+ monthlyProActive={monthlyProActive}
  analysisId={analysisId}
  proReportCreditsCount={proReportCreditsCount}
  onApplyProReportCredit={onApplyProReportCredit}
  onSubscribeMonthly={onSubscribeMonthly}
+ onDemoEnableMonthlyPro={onDemoEnableMonthlyPro}
  subscribeMonthlyBusy={subscribeMonthlyBusy}
- checkoutSurface="insights_sidebar_unlock"
+ checkoutSurface="insights_upgrade_card"
+ onLocalDevProReportFallback={onLocalDevProReportFallback}
  />
  </div>
- </div>
- ) : null}
-
- {result && gatedFree ? (
- <div className={insightCard}>
- <p className="text-sm font-semibold text-zinc-900">Premium features</p>
- <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-zinc-600">
- <li>Full CV improvement report</li>
- <li>Structured ATS checklist</li>
- <li>Tailored cover letter</li>
- <li>PDF export</li>
- </ul>
- {showConversionUpsell && onOpenUpgradeModal ? (
- <button
- type="button"
- onClick={() => onOpenUpgradeModal()}
- className="mt-3 flex w-full min-h-[36px] items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100"
- >
- <LockIcon className="text-zinc-600" />
- Compare upgrade options
- </button>
+ {subscribeMonthlyError && process.env.NODE_ENV !== 'development' ? (
+ <p className="mt-3 text-sm leading-relaxed text-amber-800">{subscribeMonthlyError}</p>
  ) : null}
  </div>
  ) : null}
 
- {!result && !subscriberMonthlyPro ? (
- <div className={insightCard}>
- <p className="text-sm font-semibold text-zinc-900">{COPY_INSIGHTS_EMPTY_PAID_PRO_RUN}</p>
- <p className="mt-1 text-xs leading-relaxed text-zinc-600">{COPY_PRO_REPORT_INCLUDES}</p>
- <div className="mt-3">
- <UnlockProReportCta
- emphasize
- fullWidth
- subscriberMonthlyPro={subscriberMonthlyPro}
- checkoutSurface="insights_empty_prepaid_card"
- analysisId={analysisId}
- proReportCreditsCount={proReportCreditsCount}
- onApplyProReportCredit={onApplyProReportCredit}
- />
- </div>
- </div>
- ) : null}
-
+ {/* After-analysis preview */}
  {!result && !emptyStateOverride ? (
  <div className={insightCard}>
- <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">After you analyze</p>
- <ul className="mt-2 space-y-2 text-xs leading-relaxed text-zinc-600">
+ <p className={labelCaps}>After you analyze</p>
+ <ul className={`mt-3 space-y-2 ${textMuted}`}>
  <li>Fit score and summary</li>
  <li>CV improvement suggestions</li>
  <li>ATS keyword checklist preview</li>
@@ -973,16 +927,13 @@ export function AnalysisInsightsPanel({
  </div>
  ) : null}
 
- <div className={insightCard}>
+ {/* Saved reports — secondary */}
+ <div className={insightCardSubtle}>
  <div className="flex flex-wrap items-center justify-between gap-2">
- <span className="text-sm font-semibold text-zinc-900">Saved reports</span>
- {!savedReportsDashboardAllowed ? (
- <LockedHint label="Upgrade" />
- ) : (
- <LockedHint label="Library" />
- )}
+ <span className="text-sm font-medium text-dim">Saved reports</span>
+ {!savedReportsDashboardAllowed ? <LockedHint label="Pro" /> : null}
  </div>
- <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+ <p className={`mt-1.5 text-sm ${textMuted}`}>
  {savedReportsDashboardAllowed
  ? 'Reopen past analyses from your library.'
  : 'Included with Monthly Pro or Pro Report.'}
@@ -990,7 +941,7 @@ export function AnalysisInsightsPanel({
  {savedReportsDashboardAllowed ? (
  <Link
  href="/dashboard/reports"
- className="mt-3 inline-flex min-h-[40px] w-full items-center justify-center rounded-lg border border-zinc-300 bg-zinc-50 px-4 py-2 text-xs font-medium text-zinc-900 transition hover:bg-zinc-100"
+ className={`${btnGhost} mt-2 w-full text-sm`}
  >
  Open saved reports
  </Link>
@@ -998,9 +949,9 @@ export function AnalysisInsightsPanel({
  <button
  type="button"
  onClick={() => bumpUpgradeFromLocked('saved_reports_dashboard')}
- className="mt-3 flex w-full min-h-[40px] items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-xs font-medium text-zinc-800 transition hover:bg-zinc-50"
+ className={`${btnGhost} mt-2 w-full gap-2 text-sm`}
  >
- <LockIcon className="text-zinc-600" />
+ <LockIcon className="text-dim" />
  Unlock saved reports
  </button>
  )}
@@ -1008,20 +959,20 @@ export function AnalysisInsightsPanel({
 
  {billingSandboxVisible ? (
  <div id="jobfit-billing-sandbox" className={`${insightCard} border-dashed`}>
- <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">Billing sandbox</p>
- <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">Local-only demo tools.</p>
+ <p className={labelCaps}>Billing sandbox</p>
+ <p className={`mt-2 ${textMuted}`}>Local dev only.</p>
  <div className="mt-3 flex flex-wrap gap-2">
  <button
  type="button"
  onClick={onDemoAddProCredit}
- className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+ className={`${btnSecondary} px-3 py-1.5 text-xs`}
  >
  +1 Pro credit
  </button>
  <button
  type="button"
  onClick={onDemoToggleMonthlyPro}
- className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+ className={`${btnSecondary} px-3 py-1.5 text-xs`}
  >
  Toggle Monthly Pro
  </button>
@@ -1036,51 +987,40 @@ export function AnalysisInsightsPanel({
  ) : result ? (
  !isFitAnalysisOutput(result) ? (
  <div className={`${card} ${cardPadding} min-w-0`}>
- <h2 className="text-lg font-semibold text-zinc-900">Analysis status</h2>
- <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">{result}</p>
+ <h2 className="text-lg font-semibold text-onyx">Analysis status</h2>
+ <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-dim">{result}</p>
  </div>
  ) : (
  <div className={`${card} ${cardPadding} min-w-0 space-y-6`}>
- <div>
- <h2 className="text-lg font-semibold text-zinc-900">Fit report</h2>
- <p className="mt-1 text-sm text-zinc-500">
- {gatedFree
- ? 'Essentials below. Upgrade for the full checklist, cover letter, and PDF export.'
- : 'Full report for this analysis session.'}
- </p>
+ {onNewAnalysis ? (
+ <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ash/40 pb-4">
+ <div className="flex flex-wrap items-center gap-2">
+ <h2 className="text-lg font-semibold text-onyx">Results</h2>
+ {gatedFree ? <span className={badgeNeutral}>Free</span> : null}
  </div>
+ <button type="button" onClick={onNewAnalysis} className={`${btnSecondary} shrink-0 text-sm`}>
+ Analyze another role
+ </button>
+ </div>
+ ) : (
+ <div className="flex flex-wrap items-center gap-2 border-b border-ash/40 pb-4">
+ <h2 className="text-lg font-semibold text-onyx">Results</h2>
+ {gatedFree ? <span className={badgeNeutral}>Free</span> : null}
+ </div>
+ )}
 
  {matchScore !== null ? (
- <div className={scoreCard}>
- <div>
- <p className="text-sm font-medium text-zinc-900">Match score</p>
- <p className="mt-0.5 text-xs text-zinc-500">CV compared to this job posting</p>
- </div>
- <p className={scoreValue}>
- {matchScore}
- <span className="text-xl font-medium text-zinc-500">%</span>
- </p>
- </div>
+ <MatchScoreGauge
+ score={matchScore}
+ headline={matchScoreHeadline}
+ description={gatedFree ? truncateSummary(matchScoreDescription, 120) : matchScoreDescription}
+ />
  ) : null}
 
  {gatedFree && !subscriberMonthlyPro ? (
- <div className="rounded-lg border border-zinc-200 bg-white p-4">
- <p className="text-sm font-medium text-zinc-900">Unlock the full report</p>
- <p className="mt-1 text-xs leading-relaxed text-zinc-600">
- {COPY_PRO_REPORT_INCLUDES}
+ <p className="rounded-xl border border-ash/45 bg-ash/8 px-4 py-3 text-sm text-dim">
+ Upgrade in the sidebar to unlock the full report, ATS checklist, cover letter, and PDF export.
  </p>
- <div className="mt-4">
- <PremiumUpgradeRow
- subscriberMonthlyPro={subscriberMonthlyPro}
- analysisId={analysisId}
- proReportCreditsCount={proReportCreditsCount}
- onApplyProReportCredit={onApplyProReportCredit}
- onSubscribeMonthly={onSubscribeMonthly}
- subscribeMonthlyBusy={subscribeMonthlyBusy}
- checkoutSurface="insights_overview_banner"
- />
- </div>
- </div>
  ) : null}
 
  {/* Summary */}
@@ -1090,20 +1030,18 @@ export function AnalysisInsightsPanel({
  <button
  type="button"
  onClick={() => bumpUpgradeFromLocked('summary_narrative')}
- className="mt-2 w-full rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-left outline-none transition hover:border-zinc-300 hover:bg-white focus-visible:ring-2 focus-visible:ring-zinc-400"
+ className="mt-2 w-full rounded-lg border border-ash/60 bg-ash/20 p-4 text-left outline-none transition hover:border-ash/70 hover:bg-white focus-visible:ring-2 focus-visible:ring-brick/30"
  >
- <p className="text-sm leading-7 text-zinc-700">{truncateSummary(verdictSummary)}</p>
- <p className="mt-2 text-xs leading-relaxed text-zinc-700/85">
- <p className="mt-2 text-xs text-zinc-500">Unlock with Pro Report or Monthly Pro.</p>
- </p>
+ <p className="text-sm leading-7 text-dim">{truncateSummary(verdictSummary)}</p>
+ <p className="mt-2 text-xs text-dim">Unlock with Pro Report or Monthly Pro.</p>
  </button>
  ) : (
  <>
- <p className="mt-2 text-sm leading-relaxed text-zinc-700">
+ <p className="mt-2 text-sm leading-relaxed text-dim">
  {gatedFree ? truncateSummary(verdictSummary) : verdictSummary || 'None'}
  </p>
  {gatedFree ? (
- <p className="mt-2 text-xs text-zinc-500">
+ <p className="mt-2 text-xs text-dim">
  Abbreviated on Free. Full narrative is inside the unlocked report.
  </p>
  ) : null}
@@ -1115,33 +1053,20 @@ export function AnalysisInsightsPanel({
  <div className={resultSection}>
  <SectionHeading>{gatedFree ? 'Top suggestions' : 'CV improvement suggestions'}</SectionHeading>
  {!canSeeAllSuggestions(permissionCtx) ? (
- <p className="mt-2 text-xs text-zinc-500">
+ <p className="mt-2 text-xs text-dim">
  Three strongest edits on Free. Pro unlocks the complete prioritized list for this role.
  </p>
  ) : null}
  <ul className="mt-3 list-none space-y-2">
  {visibleSuggestions.map((line, idx) => (
- <li key={idx} className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-800">
- <span className="font-medium text-zinc-600">{idx + 1}.</span> {line}
+ <li key={idx} className="rounded-md border border-ash/60 bg-ash/20 px-3 py-2.5 text-sm text-onyx">
+ <span className="font-medium text-dim">{idx + 1}.</span> {line}
  </li>
  ))}
  {!visibleSuggestions.length ? (
- <li className="text-sm text-zinc-500">No structured bullets parsed yet.</li>
+ <li className="text-sm text-dim">No structured bullets parsed yet.</li>
  ) : null}
  </ul>
- {gatedFree ? (
- <div className="mt-4">
- <PremiumUpgradeRow
- subscriberMonthlyPro={subscriberMonthlyPro}
- analysisId={analysisId}
- proReportCreditsCount={proReportCreditsCount}
- onApplyProReportCredit={onApplyProReportCredit}
- onSubscribeMonthly={onSubscribeMonthly}
- subscribeMonthlyBusy={subscribeMonthlyBusy}
- checkoutSurface="insights_after_suggestions"
- />
- </div>
- ) : null}
  </div>
 
  {/* ATS */}
@@ -1149,44 +1074,33 @@ export function AnalysisInsightsPanel({
  <SectionHeading>ATS keyword checklist</SectionHeading>
  {gatedFree ? (
  <>
- <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+ <p className="mt-2 text-xs leading-relaxed text-dim">
  Mirrors terminology from your posting (German or English). Use keywords only where your CV already has
  honest evidence. Avoid stuffing.
  </p>
  <ul className="mt-3 list-none space-y-2">
  {(sections?.atsBullets ?? []).slice(0, FREE_ATS_VISIBLE_COUNT).map((line, idx) => (
- <li key={idx} className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-800">
+ <li key={idx} className="rounded-md border border-ash/60 bg-ash/20 px-3 py-2.5 text-sm text-onyx">
  {line}
  </li>
  ))}
  {!(sections?.atsBullets ?? []).slice(0, FREE_ATS_VISIBLE_COUNT).length ? (
- <li className="text-sm text-zinc-500">
+ <li className="text-sm text-dim">
  No checklist lines parsed yet. Rerun analysis after pasting a concrete posting.
  </li>
  ) : null}
  </ul>
  <div className={`mt-3 ${lockedPanel}`}>
- <LockIcon className="mx-auto text-zinc-500" />
- <p className="mt-2 text-sm font-medium text-zinc-800">
+ <LockIcon className="mx-auto text-dim" />
+ <p className="mt-2 text-sm font-medium text-onyx">
  {Math.max(0, (sections?.atsBullets ?? []).length - FREE_ATS_VISIBLE_COUNT) > 0
  ? `${Math.max(0, (sections?.atsBullets ?? []).length - FREE_ATS_VISIBLE_COUNT)} more checklist items`
  : 'Full checklist'}{' '}
  locked
  </p>
- <p className="mt-1 text-xs text-zinc-500">
+ <p className="mt-1 text-xs text-dim">
  Required vs optional keywords, placement hints, and integrity warnings.
  </p>
- </div>
- <div className="mt-4">
- <PremiumUpgradeRow
- subscriberMonthlyPro={subscriberMonthlyPro}
- analysisId={analysisId}
- proReportCreditsCount={proReportCreditsCount}
- onApplyProReportCredit={onApplyProReportCredit}
- onSubscribeMonthly={onSubscribeMonthly}
- subscribeMonthlyBusy={subscribeMonthlyBusy}
- checkoutSurface="insights_ats_unlock"
- />
  </div>
  {showConversionUpsell && onOpenUpgradeModal ? (
  <button
@@ -1200,17 +1114,17 @@ export function AnalysisInsightsPanel({
  </>
  ) : (
  <>
- <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+ <p className="mt-2 text-xs leading-relaxed text-dim">
  Sorted by what the posting stresses vs what your CV can substantiate. Add terms naturally in bullets that
  already reflect that work. Never paste keyword blocks.
  </p>
  {atsPremiumLoading ? (
- <p className="mt-3 text-sm text-zinc-500">Building structured ATS checklist…</p>
+ <p className="mt-3 text-sm text-dim">Building structured ATS checklist…</p>
  ) : null}
  {atsPremiumErr ? (
  <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
  <p className="text-xs leading-relaxed text-amber-900">{atsPremiumErr}</p>
- <p className="mt-2 text-[11px] text-zinc-500">
+ <p className="mt-2 text-[11px] text-dim">
  Showing baseline checklist lines parsed from your analysis below.
  </p>
  </div>
@@ -1237,7 +1151,7 @@ export function AnalysisInsightsPanel({
  </li>
  ))
  ) : (
- <li className="text-sm text-zinc-500">None</li>
+ <li className="text-sm text-dim">None</li>
  )}
  </ul>
  </div>
@@ -1261,46 +1175,46 @@ export function AnalysisInsightsPanel({
  </li>
  ))
  ) : (
- <li className="text-sm text-zinc-500">None</li>
+ <li className="text-sm text-dim">None</li>
  )}
  </ul>
  </div>
  <div>
- <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
+ <h4 className="text-xs font-semibold uppercase tracking-wider text-dim">
  Nice-to-have keywords
  </h4>
  <ul className="mt-2 list-none space-y-2">
  {atsPremium.niceToHave.length ? (
  atsPremium.niceToHave.map((item, idx) => (
- <li key={`n-${idx}`} className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800">
- <span className="font-medium text-zinc-900">{item.phrase}</span>
+ <li key={`n-${idx}`} className="rounded-xl border border-ash/60 bg-white px-3 py-2 text-sm text-onyx">
+ <span className="font-medium text-onyx">{item.phrase}</span>
  {item.cvEvidenceNote ? (
- <span className="mt-1 block text-xs leading-relaxed text-zinc-600">{item.cvEvidenceNote}</span>
+ <span className="mt-1 block text-xs leading-relaxed text-dim">{item.cvEvidenceNote}</span>
  ) : null}
  </li>
  ))
  ) : (
- <li className="text-sm text-zinc-500">None</li>
+ <li className="text-sm text-dim">None</li>
  )}
  </ul>
  </div>
  <div>
- <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-800/90">
+ <h4 className="text-xs font-semibold uppercase tracking-wider text-onyx/90">
  Natural places for honest additions
  </h4>
- <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+ <p className="mt-1 text-[11px] leading-relaxed text-dim">
  Only if you truly have adjacent experience. Weave into existing bullets or summaries; don&apos;t append keyword lists.
  </p>
  <ul className="mt-2 list-none space-y-2">
  {atsPremium.suggestedPlacements.length ? (
  atsPremium.suggestedPlacements.map((item, idx) => (
- <li key={`p-${idx}`} className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-800">
- <span className="font-medium text-zinc-800">{item.keyword}</span>
- <span className="mt-1 block text-xs leading-relaxed text-zinc-800/75">{item.suggestion}</span>
+ <li key={`p-${idx}`} className="rounded-xl border border-ash/60 bg-ash/20 px-3 py-2 text-sm text-onyx">
+ <span className="font-medium text-onyx">{item.keyword}</span>
+ <span className="mt-1 block text-xs leading-relaxed text-onyx/75">{item.suggestion}</span>
  </li>
  ))
  ) : (
- <li className="text-sm text-zinc-500">None</li>
+ <li className="text-sm text-dim">None</li>
  )}
  </ul>
  </div>
@@ -1308,7 +1222,7 @@ export function AnalysisInsightsPanel({
  <h4 className="text-xs font-semibold uppercase tracking-wider text-rose-800">
  Do not force these keywords
  </h4>
- <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+ <p className="mt-1 text-[11px] leading-relaxed text-dim">
  Posting asks for evidence your CV does not show. Interviews will verify.
  </p>
  <ul className="mt-2 list-none space-y-2">
@@ -1320,7 +1234,7 @@ export function AnalysisInsightsPanel({
  </li>
  ))
  ) : (
- <li className="text-sm text-zinc-500">No extra warnings.</li>
+ <li className="text-sm text-dim">No extra warnings.</li>
  )}
  </ul>
  </div>
@@ -1330,12 +1244,12 @@ export function AnalysisInsightsPanel({
  <ul className="mt-3 list-none space-y-2">
  {sections?.atsBullets.length ? (
  sections.atsBullets.map((line, idx) => (
- <li key={idx} className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800">
+ <li key={idx} className="rounded-xl border border-ash/60 bg-white px-3 py-2 text-sm text-onyx">
  • {line}
  </li>
  ))
  ) : (
- <li className="text-sm text-zinc-500">No ATS lines parsed.</li>
+ <li className="text-sm text-dim">No ATS lines parsed.</li>
  )}
  </ul>
  ) : null}
@@ -1346,7 +1260,7 @@ export function AnalysisInsightsPanel({
  {gatedFree ? (
  <div className={resultSection}>
  <SectionHeading>Premium features</SectionHeading>
- <p className="mt-2 text-xs text-zinc-500">
+ <p className="mt-2 text-xs text-dim">
  Included with Pro Report or Monthly Pro. Tap a card to see upgrade options.
  </p>
  <div className="mt-4 grid gap-3">
@@ -1361,17 +1275,6 @@ export function AnalysisInsightsPanel({
  />
  ))}
  </div>
- <div className="mt-4">
- <PremiumUpgradeRow
- subscriberMonthlyPro={subscriberMonthlyPro}
- analysisId={analysisId}
- proReportCreditsCount={proReportCreditsCount}
- onApplyProReportCredit={onApplyProReportCredit}
- onSubscribeMonthly={onSubscribeMonthly}
- subscribeMonthlyBusy={subscribeMonthlyBusy}
- checkoutSurface="insights_locked_cards_cta"
- />
- </div>
  </div>
  ) : (
  <>
@@ -1380,51 +1283,51 @@ export function AnalysisInsightsPanel({
  <ul className="mt-3 list-none space-y-2">
  {sections?.strongMatchBullets.length ? (
  sections.strongMatchBullets.map((line, idx) => (
- <li key={idx} className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm leading-relaxed text-zinc-700">
+ <li key={idx} className="rounded-md border border-ash/60 bg-ash/20 px-3 py-2.5 text-sm leading-relaxed text-dim">
  {line}
  </li>
  ))
  ) : (
- <li className="text-sm text-zinc-500">None</li>
+ <li className="text-sm text-dim">None</li>
  )}
  </ul>
  </div>
 
  <div className={resultSection}>
  <SectionHeading>Recruiter red flags</SectionHeading>
- <p className="mt-1 text-xs text-zinc-500">Gaps, mismatches, and credibility risks from this posting.</p>
+ <p className="mt-1 text-xs text-dim">Gaps, mismatches, and credibility risks from this posting.</p>
  <ul className="mt-3 list-none space-y-2">
  {sections?.gapBullets.length ? (
  sections.gapBullets.map((line, idx) => (
- <li key={idx} className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm leading-relaxed text-zinc-800">
+ <li key={idx} className="rounded-md border border-ash/60 bg-ash/20 px-3 py-2.5 text-sm leading-relaxed text-onyx">
  {line}
  </li>
  ))
  ) : (
- <li className="text-sm text-zinc-500">None</li>
+ <li className="text-sm text-dim">None</li>
  )}
  </ul>
  </div>
 
  <div className={resultSection}>
  <SectionHeading>Interview readiness</SectionHeading>
- <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-zinc-700">
+ <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-dim">
  {sections?.interviewReadinessLines.join('\n') || 'None'}
  </p>
  </div>
 
  <div className={resultSection}>
  <SectionHeading>Reality check</SectionHeading>
- <p className="mt-2 text-sm leading-7 text-zinc-700">
+ <p className="mt-2 text-sm leading-7 text-dim">
  {sections?.realityCheckParagraphs.join('\n\n') || 'None'}
  </p>
  </div>
 
- <div className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4">
+ <div className="grid gap-4 rounded-2xl border border-ash/60 bg-white p-4">
  <div className="flex flex-wrap items-start justify-between gap-3">
  <div>
- <div className="text-sm font-semibold text-zinc-900">Tailored cover letter</div>
- <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+ <div className="text-sm font-semibold text-onyx">Tailored cover letter</div>
+ <p className="mt-1 text-xs leading-relaxed text-dim">
  Generated from your CV, job posting, and analysis. Honest wording only. Included in PDF exports.
  Adjust language and tone, then edit freely before sending.
  </p>
@@ -1433,12 +1336,12 @@ export function AnalysisInsightsPanel({
  </div>
 
  <div className="grid gap-3 sm:grid-cols-2">
- <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600">
+ <label className="block text-xs font-semibold uppercase tracking-wider text-dim">
  Language
  <select
  value={coverLanguage}
  onChange={(e) => setCoverLanguage(e.target.value as CoverLetterLanguageId)}
- className="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-2.5 text-sm font-medium text-zinc-900 outline-none focus:border-zinc-300"
+ className="mt-1.5 w-full rounded-xl border border-ash/70 bg-ash/20 px-3 py-2.5 text-sm font-medium text-onyx outline-none focus:border-ash/70"
  >
  {COVER_LETTER_LANGUAGES.map((opt) => (
  <option key={opt.id} value={opt.id}>
@@ -1447,12 +1350,12 @@ export function AnalysisInsightsPanel({
  ))}
  </select>
  </label>
- <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600">
+ <label className="block text-xs font-semibold uppercase tracking-wider text-dim">
  Tone
  <select
  value={coverTone}
  onChange={(e) => setCoverTone(e.target.value as CoverLetterToneId)}
- className="mt-1.5 w-full rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-2.5 text-sm font-medium text-zinc-900 outline-none focus:border-zinc-300"
+ className="mt-1.5 w-full rounded-xl border border-ash/70 bg-ash/20 px-3 py-2.5 text-sm font-medium text-onyx outline-none focus:border-ash/70"
  >
  {COVER_LETTER_TONES.map((opt) => (
  <option key={opt.id} value={opt.id}>
@@ -1479,7 +1382,7 @@ export function AnalysisInsightsPanel({
  !analysisId
  }
  onClick={() => void runCoverLetterGeneration()}
- className="rounded-full border border-zinc-300 bg-zinc-100 px-5 py-2.5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-45"
+ className="rounded-full border border-ash/70 bg-ash/30 px-5 py-2.5 text-sm font-semibold text-onyx transition hover:bg-ash/30 disabled:cursor-not-allowed disabled:opacity-45"
  >
  {coverGenLoading ? 'Generating…' : 'Generate cover letter'}
  </button>
@@ -1492,7 +1395,7 @@ export function AnalysisInsightsPanel({
  !analysisId
  }
  onClick={() => void runCoverLetterGeneration()}
- className="rounded-full border border-zinc-300 bg-zinc-50 px-5 py-2.5 text-sm font-semibold text-zinc-800 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-45"
+ className="rounded-full border border-ash/70 bg-ash/20 px-5 py-2.5 text-sm font-semibold text-onyx transition hover:border-onyx/25 disabled:cursor-not-allowed disabled:opacity-45"
  >
  Regenerate
  </button>
@@ -1500,7 +1403,7 @@ export function AnalysisInsightsPanel({
  type="button"
  disabled={!coverLetterText.trim()}
  onClick={() => void handleCopyCoverLetter()}
- className="rounded-full border border-zinc-300 bg-zinc-50 px-5 py-2.5 text-sm font-semibold text-zinc-800 transition hover:border-zinc-300 disabled:cursor-not-allowed disabled:opacity-45"
+ className="rounded-full border border-ash/70 bg-ash/20 px-5 py-2.5 text-sm font-semibold text-onyx transition hover:border-ash/70 disabled:cursor-not-allowed disabled:opacity-45"
  >
  {coverCopied ? 'Copied!' : 'Copy'}
  </button>
@@ -1510,14 +1413,14 @@ export function AnalysisInsightsPanel({
  <p className="text-[11px] leading-relaxed text-amber-800">{coverGenError}</p>
  ) : null}
 
- <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600">
+ <label className="block text-xs font-semibold uppercase tracking-wider text-dim">
  Letter (editable)
  <textarea
  value={coverLetterText}
  onChange={(e) => setCoverLetterText(e.target.value)}
  rows={14}
  placeholder="Choose language and tone, then generate, or paste your own draft."
- className="mt-1.5 w-full resize-y rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200"
+ className="mt-1.5 w-full resize-y rounded-lg border border-ash/80 bg-white px-4 py-3 text-sm leading-relaxed text-onyx outline-none placeholder:text-dim/60 focus:border-brick/45 focus:ring-2 focus:ring-brick/15"
  />
  </label>
  </div>
@@ -1525,18 +1428,18 @@ export function AnalysisInsightsPanel({
  )}
 
  {/* PDF export — premium; free tier opens upgrade modal */}
- <div className="border-t border-zinc-200/80 pt-6">
+ <div className="border-t border-ash/50 pt-6">
  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
  <div className="min-w-0">
  <div className="inline-flex items-center gap-2">
- <span className="text-sm font-semibold text-zinc-900">Export PDF report</span>
+ <span className="text-sm font-semibold text-onyx">Export PDF report</span>
  {!canExportPDF(permissionCtx) ? (
- <span className="rounded-full border border-zinc-300 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+ <span className="rounded-full border border-ash/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-dim">
  Pro
  </span>
  ) : null}
  </div>
- <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+ <p className="mt-1 text-xs leading-relaxed text-dim">
  {canExportPDF(permissionCtx)
  ? 'Professional layout with score, summary, skills, suggestions, ATS checklist, and cover letter when generated.'
  : 'Unlock Pro Report for this posting or Monthly Pro to download your report.'}
@@ -1548,31 +1451,21 @@ export function AnalysisInsightsPanel({
  if (!canExportPDF(permissionCtx)) bumpUpgradeFromLocked('pdf_export')
  else handlePrint()
  }}
- className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 min-[420px]:min-w-[200px] ${
+ className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick/30 focus-visible:ring-offset-2 min-[420px]:min-w-[200px] ${
  canExportPDF(permissionCtx)
- ? 'bg-indigo-600 text-white hover:bg-indigo-700'
- : 'cursor-pointer border border-zinc-300 bg-white text-zinc-800 hover:border-zinc-400 hover:bg-zinc-50'
+ ? 'bg-onyx text-white hover:bg-onyx/90'
+ : 'cursor-pointer border border-ash/70 bg-white text-onyx hover:border-onyx/20 hover:bg-ash/20'
  }`}
  >
- {!canExportPDF(permissionCtx) ? <LockIcon className="text-zinc-600" /> : null}
+ {!canExportPDF(permissionCtx) ? <LockIcon className="text-dim" /> : null}
  Export PDF
  </button>
  </div>
  {gatedFree && !canExportPDF(permissionCtx) ? (
  <div className="mt-5 max-w-lg">
- <p className="mb-3 text-xs leading-relaxed text-zinc-500">
- Export unlocks with Pro Report (this job) or Monthly Pro. Use the button below for secure Stripe
- Checkout.
+ <p className="text-sm leading-relaxed text-dim">
+ PDF export unlocks with Pro Report or Monthly Pro. Upgrade from the sidebar.
  </p>
- <PremiumUpgradeRow
- subscriberMonthlyPro={subscriberMonthlyPro}
- analysisId={analysisId}
- proReportCreditsCount={proReportCreditsCount}
- onApplyProReportCredit={onApplyProReportCredit}
- onSubscribeMonthly={onSubscribeMonthly}
- subscribeMonthlyBusy={subscribeMonthlyBusy}
- checkoutSurface="insights_pdf_pro_report"
- />
  </div>
  ) : null}
  </div>
@@ -1582,14 +1475,21 @@ export function AnalysisInsightsPanel({
 
  if (hasMainContent) {
  return (
- <div className="contents">
- <div className="order-3 min-w-0 lg:order-none lg:col-start-2">{resultPanel}</div>
- <div className="order-2 lg:order-none lg:col-start-3 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100dvh-5rem)] lg:overflow-y-auto lg:overscroll-contain">
- {sidebarPanel}
+ <>
+ <div
+ id="jobfit-analysis-results"
+ className={`${resultOrderClass} min-w-0 scroll-mt-24 lg:order-none lg:col-start-1 ${resultRowClass}`}
+ >
+ {resultPanel}
  </div>
- </div>
+ <div className={sidebarLayoutClass}>{sidebarPanel}</div>
+ </>
  )
  }
 
- return sidebarPanel
+ return (
+ <div className={sidebarLayoutClass}>
+ {sidebarPanel}
+ </div>
+ )
 }

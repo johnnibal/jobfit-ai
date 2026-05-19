@@ -10,20 +10,26 @@ import {
   PRICE_PRO_REPORT_EUR,
 } from '@/lib/planTypes'
 import {
-  badge,
+  badgeRecommended,
   brandDot,
   brandMark,
   btnPrimary,
   btnSecondary,
   btnSecondaryFull,
-  card,
-  cardFeatured,
-  cardPadding,
+  footerBar,
+  headerBar,
+  heroHeadline,
+  heroSubheadline,
   iconAccent,
+  pageContainer,
   pageMain,
+  pricingPlanCard,
+  pricingPlanFeature,
+  pricingPlanPrice,
+  pricingPlanTitle,
   sectionHeading,
-  stepBadge,
   textLink,
+  textMuted,
 } from '@/components/ui/theme'
 
 export const metadata: Metadata = {
@@ -46,25 +52,23 @@ function CheckIcon() {
 
 function Bullet({ children }: { children: ReactNode }) {
   return (
-    <li className="flex gap-2.5 text-sm leading-relaxed text-zinc-700">
+    <li className={`flex gap-2.5 ${pricingPlanFeature}`}>
       <CheckIcon />
       <span>{children}</span>
     </li>
   )
 }
 
-const planCard = `flex flex-col ${card} ${cardPadding}`
-
 export default function Home() {
   return (
     <main className={pageMain}>
-      <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:pb-24 lg:pt-10">
-        <header className="mb-12 flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-6">
+      <div className={`${pageContainer} pb-20 lg:pb-24`}>
+        <header className={headerBar}>
           <Link href="/" className={brandMark}>
             <span className={brandDot} aria-hidden />
             JobFit AI
           </Link>
-          <nav className="flex flex-wrap gap-2 text-sm font-medium" aria-label="Primary">
+          <nav className="flex flex-wrap gap-2" aria-label="Primary">
             <HomeTrackedLink href="/analyze" ctaId="header_analyze" className={btnSecondary}>
               Analyze
             </HomeTrackedLink>
@@ -74,94 +78,31 @@ export default function Home() {
           </nav>
         </header>
 
-        {/* Hero */}
-        <section className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(280px,440px)] lg:gap-12">
-          <div className="max-w-xl">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-indigo-600">CV fit analysis</p>
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
-              Know if your CV fits the job before you apply
-            </h1>
-            <p className="mt-4 text-base leading-relaxed text-zinc-600 sm:text-lg">
-              JobFit AI compares your CV with a job posting, gives you a fit score, finds missing gaps, and helps you
-              improve your application.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <HomeTrackedLink href="/analyze" ctaId="hero_primary_analyze" className={btnPrimary}>
-                Analyze My CV
-              </HomeTrackedLink>
-              <HomeTrackedLink href="/pricing" ctaId="hero_secondary_pricing" className={btnSecondary}>
-                View Pricing
-              </HomeTrackedLink>
-            </div>
-            <p className="mt-6 text-sm text-zinc-500">
-              Free tier available. No card required to try the analyzer.
-            </p>
+        <section className="pb-14 pt-[88px] text-center lg:pb-[56px]">
+          <h1 className={heroHeadline}>
+            Know if your CV <span className="text-brick">fits the job</span> before you apply
+          </h1>
+          <p className={heroSubheadline}>
+            Compare your CV with a job posting, find gaps, and improve your application before you apply.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <HomeTrackedLink href="/analyze" ctaId="hero_primary_analyze" className={btnPrimary}>
+              Analyze My CV
+            </HomeTrackedLink>
+            <HomeTrackedLink href="/pricing" ctaId="hero_secondary_pricing" className={btnSecondary}>
+              View Pricing
+            </HomeTrackedLink>
           </div>
+          <p className={`mt-5 ${textMuted}`}>Free tier available. No card required to try the analyzer.</p>
           <HeroMatchIllustration />
         </section>
 
-        {/* How it works */}
-        <section className="mt-20 lg:mt-24" aria-labelledby="how-heading">
-          <h2 id="how-heading" className={sectionHeading}>
-            How it works
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-            Three steps from paste to actionable feedback.
-          </p>
-          <ol className="mt-8 grid gap-4 sm:grid-cols-3">
-            {[
-              {
-                step: '1',
-                title: 'Add your materials',
-                body: 'Paste your CV text and the full job description. You can upload a PDF to fill the CV field.',
-              },
-              {
-                step: '2',
-                title: 'Run the analysis',
-                body: 'JobFit AI compares overlap between your CV and the posting and scores the fit.',
-              },
-              {
-                step: '3',
-                title: 'Act on the report',
-                body: 'Review gaps, suggestions, and ATS keywords. Upgrade for the full checklist, cover letter, and PDF.',
-              },
-            ].map((item) => (
-              <li key={item.step} className={`${card} p-5 sm:p-6`}>
-                <span className={stepBadge}>{item.step}</span>
-                <h3 className="mt-4 text-sm font-semibold text-zinc-900">{item.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-600">{item.body}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        {/* What you get */}
-        <section className="mt-20 lg:mt-24" aria-labelledby="benefits-heading">
-          <h2 id="benefits-heading" className={sectionHeading}>
-            What you get
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-            Outputs you can edit and reuse for each application.
-          </p>
-          <div className={`mt-8 ${card} ${cardPadding}`}>
-            <ul className="grid gap-3 sm:grid-cols-2">
-              <Bullet>Fit score for the role</Bullet>
-              <Bullet>CV improvement suggestions</Bullet>
-              <Bullet>ATS keyword checklist</Bullet>
-              <Bullet>Tailored cover letter draft</Bullet>
-              <Bullet>PDF report export</Bullet>
-              <Bullet>Saved reports on Monthly Pro</Bullet>
-            </ul>
-          </div>
-        </section>
-
-        {/* Germany */}
-        <section className="mt-20 lg:mt-24" aria-labelledby="germany-heading">
-          <h2 id="germany-heading" className={sectionHeading}>
+        <section className="mt-16 lg:mt-20" aria-labelledby="germany-heading">
+          <h2 id="germany-heading" className={`${sectionHeading} text-center`}>
             Built for job seekers in Germany
           </h2>
-          <div className={`mt-8 ${card} ${cardPadding}`}>
-            <ul className="grid gap-3 sm:grid-cols-2">
+          <div className="mt-6 rounded-[18px] border border-ash/90 bg-white p-7 shadow-[0_1px_2px_rgba(12,18,12,0.05),0_6px_20px_rgba(12,18,12,0.06)] sm:p-8">
+            <ul className="grid gap-4 sm:grid-cols-2">
               <Bullet>German and English CV and job text supported</Bullet>
               <Bullet>Highlights terms German postings often emphasize</Bullet>
               <Bullet>Honest suggestions based on your CV, not invented claims</Bullet>
@@ -170,12 +111,11 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Pricing preview */}
         <section id="pricing-preview" className="mt-20 scroll-mt-24 lg:mt-24" aria-labelledby="pricing-heading">
           <h2 id="pricing-heading" className={sectionHeading}>
             Pricing preview
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-zinc-600">
+          <p className={`mt-3 max-w-2xl text-base ${textMuted}`}>
             Start free. Full details on the{' '}
             <HomeTrackedLink href="/pricing" ctaId="pricing_section_compare_link" className={textLink}>
               pricing page
@@ -184,24 +124,24 @@ export default function Home() {
           </p>
 
           <div className="mt-8 grid gap-5 lg:grid-cols-3 lg:items-stretch">
-            <article className={planCard}>
-              <h3 className="text-base font-semibold text-zinc-900">Free</h3>
-              <p className="mt-2 text-3xl font-semibold tabular-nums text-zinc-900">€0</p>
+            <article className={`${pricingPlanCard} flex flex-col`}>
+              <h3 className={pricingPlanTitle}>Free</h3>
+              <p className={pricingPlanPrice}>€0</p>
               <ul className="mt-5 flex flex-1 flex-col gap-2.5">
                 <Bullet>1 free analysis per day</Bullet>
                 <Bullet>Basic score and preview</Bullet>
               </ul>
-              <HomeTrackedLink href="/analyze" ctaId="pricing_preview_free" className={`mt-6 ${btnSecondaryFull}`}>
+              <HomeTrackedLink href="/analyze" ctaId="pricing_preview_free" className={`${btnSecondaryFull} mt-6 h-[42px]`}>
                 Start free
               </HomeTrackedLink>
             </article>
 
-            <article className={`${cardFeatured} ${cardPadding} relative flex flex-col`}>
-              <span className={`${badge} absolute -top-2.5 left-4`}>Recommended</span>
-              <h3 className="pt-1 text-base font-semibold text-zinc-900">Pro Report</h3>
-              <p className="mt-2 flex items-baseline gap-2">
-                <span className="text-3xl font-semibold tabular-nums text-indigo-700">€{PRICE_PRO_REPORT_EUR}</span>
-                <span className="text-sm text-zinc-500">one-time</span>
+            <article className={`${pricingPlanCard} relative flex flex-col border-t-2 border-t-brick`}>
+              <span className={`${badgeRecommended} absolute -top-2.5 left-4`}>Recommended</span>
+              <h3 className={`${pricingPlanTitle} pt-1`}>Pro Report</h3>
+              <p className={pricingPlanPrice}>
+                €{PRICE_PRO_REPORT_EUR}
+                <span className="ml-2 text-sm font-normal text-dim">one-time</span>
               </p>
               <ul className="mt-5 flex flex-1 flex-col gap-2.5">
                 <Bullet>One paid analysis</Bullet>
@@ -215,11 +155,11 @@ export default function Home() {
               </div>
             </article>
 
-            <article className={planCard}>
-              <h3 className="text-base font-semibold text-zinc-900">Monthly Pro</h3>
-              <p className="mt-2 flex items-baseline gap-2">
-                <span className="text-3xl font-semibold tabular-nums text-zinc-900">€{PRICE_MONTHLY_PRO_EUR}</span>
-                <span className="text-sm text-zinc-500">/month</span>
+            <article className={`${pricingPlanCard} flex flex-col`}>
+              <h3 className={pricingPlanTitle}>Monthly Pro</h3>
+              <p className={pricingPlanPrice}>
+                €{PRICE_MONTHLY_PRO_EUR}
+                <span className="ml-2 text-sm font-normal text-dim">/month</span>
               </p>
               <ul className="mt-5 flex flex-1 flex-col gap-2.5">
                 <Bullet>{MONTHLY_PRO_ANALYSES_PER_MONTH} analyses per month</Bullet>
@@ -235,25 +175,25 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="mt-20 border-t border-zinc-200 pt-8 text-center text-xs text-zinc-500">
-          <p>JobFit AI. CV and role fit tooling for applicants in Germany.</p>
-          <nav className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-zinc-600">
-            <HomeTrackedLink href="/analyze" ctaId="footer_analyzer" className="hover:text-indigo-600">
+        <footer className={`mt-20 ${footerBar}`}>
+          <p>JobFit AI: CV and role fit tooling for applicants in Germany.</p>
+          <nav className={`mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 ${textMuted}`}>
+            <HomeTrackedLink href="/analyze" ctaId="footer_analyzer" className="transition hover:text-onyx">
               Analyzer
             </HomeTrackedLink>
-            <HomeTrackedLink href="/pricing" ctaId="footer_pricing" className="hover:text-indigo-600">
+            <HomeTrackedLink href="/pricing" ctaId="footer_pricing" className="transition hover:text-onyx">
               Pricing
             </HomeTrackedLink>
-            <Link href="/privacy" className="hover:text-indigo-600">
+            <Link href="/privacy" className="transition hover:text-onyx">
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-indigo-600">
+            <Link href="/terms" className="transition hover:text-onyx">
               Terms
             </Link>
-            <Link href="/refund-policy" className="hover:text-indigo-600">
+            <Link href="/refund-policy" className="transition hover:text-onyx">
               Refunds
             </Link>
-            <Link href="/imprint" className="hover:text-indigo-600">
+            <Link href="/imprint" className="transition hover:text-onyx">
               Imprint
             </Link>
           </nav>

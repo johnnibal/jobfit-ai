@@ -70,7 +70,7 @@ export function ProReportCheckoutButton({
         if (res.status === 503 && data.fallbackDemo) {
           if (billingSandboxVisible) {
             scrollToSandbox()
-            setErr(typeof data.error === 'string' ? data.error : 'Billing unavailable. Use the sandbox below.')
+            setErr('Local dev: use the Billing sandbox on /analyze (+1 Pro credit) instead of Stripe checkout.')
           } else {
             setErr(
               typeof data.error === 'string'
@@ -162,7 +162,7 @@ export function MonthlyProCheckoutButton({
         if (res.status === 503 && data.fallbackDemo) {
           if (billingSandboxVisible) {
             scrollToSandbox()
-            setErr(typeof data.error === 'string' ? data.error : 'Billing unavailable. Use the sandbox below.')
+            setErr('Local dev: use the Billing sandbox on /analyze (+1 Pro credit) instead of Stripe checkout.')
           } else {
             setErr(
               typeof data.error === 'string'

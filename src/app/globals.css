@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafafa;
-  --foreground: #18181b;
-  --accent: #4f46e5;
-  --accent-muted: #eef2ff;
-  --accent-border: #c7d2fe;
+  --background: #fafaf8;
+  --foreground: #0c120c;
+  --accent: #c20114;
+  --accent-muted: #e8eeed;
+  --accent-border: #c7d6d5;
 }
 
 @theme inline {
@@ -14,6 +14,12 @@
   --color-accent: var(--accent);
   --color-accent-muted: var(--accent-muted);
   --color-accent-border: var(--accent-border);
+  --color-onyx: #0c120c;
+  --color-brick: #c20114;
+  --color-dim: #6d7275;
+  --color-ash: #c7d6d5;
+  --color-page: #fafaf8;
+  --color-ash-light: #e8eeed;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -22,4 +28,130 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Hero PNG layers — glass static, wave reveal, AI fade */
+@keyframes hero-layer-wave {
+  0%,
+  100% {
+    clip-path: inset(0 100% 0 0);
+  }
+  25% {
+    clip-path: inset(0 0 0 0);
+  }
+  82% {
+    clip-path: inset(0 0 0 0);
+  }
+  94% {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@keyframes hero-layer-ai {
+  0%,
+  24% {
+    opacity: 0;
+  }
+  32% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  94%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes hero-layer-idle {
+  0%,
+  38%,
+  100% {
+    transform: scale(1);
+  }
+  68% {
+    transform: scale(1.01);
+  }
+}
+
+.hero-logo-stage {
+  animation: hero-layer-idle 8s ease-in-out infinite;
+  transform-origin: var(--hero-logo-opt-x) var(--hero-logo-opt-y);
+}
+
+.hero-logo-img {
+  object-position: var(--hero-logo-opt-x) var(--hero-logo-opt-y);
+}
+
+.hero-logo-wave-layer {
+  animation: hero-layer-wave 8s ease-in-out infinite;
+}
+
+.hero-logo-ai-layer {
+  animation: hero-layer-ai 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-logo-stage,
+  .hero-logo-wave-layer,
+  .hero-logo-ai-layer,
+  .hero-connector-segment {
+    animation: none;
+  }
+}
+
+@keyframes hero-connector-march {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 10px 0;
+  }
+}
+
+.hero-connector-segment {
+  height: 1px;
+  background-image: repeating-linear-gradient(
+    to right,
+    #a1a1aa 0,
+    #a1a1aa 5px,
+    transparent 5px,
+    transparent 10px
+  );
+  background-size: 10px 1px;
+  animation: hero-connector-march 1.4s linear infinite;
+}
+
+/** CV→JD dash: masked over the lens + its border (offset to match logo object-position). */
+.hero-connector-bridge {
+  /* Inset past the visible ring so dashes never cross the circle stroke */
+  --hero-lens-mask-left: 76px;
+  --hero-lens-mask-right: 42px;
+  z-index: 15;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 calc(50% - var(--hero-lens-mask-left)),
+    transparent calc(50% - var(--hero-lens-mask-left)),
+    transparent calc(50% + var(--hero-lens-mask-right)),
+    #000 calc(50% + var(--hero-lens-mask-right)),
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 calc(50% - var(--hero-lens-mask-left)),
+    transparent calc(50% - var(--hero-lens-mask-left)),
+    transparent calc(50% + var(--hero-lens-mask-right)),
+    #000 calc(50% + var(--hero-lens-mask-right)),
+    #000 100%
+  );
+}
+
+@media (min-width: 768px) {
+  .hero-connector-bridge {
+    --hero-lens-mask-left: 82px;
+    --hero-lens-mask-right: 46px;
+  }
 }

@@ -126,7 +126,7 @@ export default function DashboardReportsClient() {
  <main className="relative min-h-screen bg-zinc-50 text-zinc-900">
  <div className="relative mx-auto w-full max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
  <div className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200/70 pb-6">
- <Link href="/" className="text-sm font-semibold tracking-tight text-zinc-900 hover:text-zinc-700">
+ <Link href="/" className="text-sm font-semibold tracking-tight text-zinc-900 hover:text-zinc-600">
  JobFit AI
  </Link>
  <AppNav
@@ -218,7 +218,7 @@ export default function DashboardReportsClient() {
  type="button"
  disabled={deleteBusyId === r.analysisId}
  onClick={() => void handleDelete(r.analysisId)}
- className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs font-medium text-red-800 transition hover:bg-red-100 disabled:opacity-50"
+ className="rounded-lg border border-zinc-300 bg-zinc-100 px-4 py-2 text-xs font-medium text-zinc-800 transition hover:bg-zinc-200 disabled:opacity-50"
  >
  {deleteBusyId === r.analysisId ? 'Deleting…' : 'Delete'}
  </button>

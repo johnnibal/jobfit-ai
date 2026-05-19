@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { verifyMonthlyProStripeCustomer } from '@/lib/monetizationUsage.server'
+import { isDatabaseConfigured, verifyMonthlyProStripeCustomer } from '@/lib/monetizationUsage.server'
 import {
   JOBFIT_PRO_REPORT_ENTITLEMENT_COOKIE,
   listActiveProReportEntitlementAnalysisIds,
@@ -32,7 +32,7 @@ export async function buildBillingSessionPayload(getCookie: CookieGetter): Promi
   let cancelAtPeriodEnd = false
   let lastPaymentFailedAt: string | null = null
 
-  if (monthlyCus) {
+  if (monthlyCus && isDatabaseConfigured()) {
     monthlyProActive = await verifyMonthlyProStripeCustomer(monthlyCus)
     const row = await prisma.billingAccount.findUnique({
       where: { stripeCustomerId: monthlyCus },
@@ -55,11 +55,16 @@ export async function buildBillingSessionPayload(getCookie: CookieGetter): Promi
   const rawAids = [...new Set([...fromEntitlement, ...fromLegacyGrants])]
   let proReportGrantedAnalysisIds: string[] = []
   if (rawAids.length > 0) {
-    const unlocked = await prisma.proReportUnlock.findMany({
-      where: { analysisId: { in: rawAids } },
-      select: { analysisId: true },
-    })
-    proReportGrantedAnalysisIds = unlocked.map((r) => r.analysisId)
+    if (isDatabaseConfigured()) {
+      const unlocked = await prisma.proReportUnlock.findMany({
+        where: { analysisId: { in: rawAids } },
+        select: { analysisId: true },
+      })
+      proReportGrantedAnalysisIds = unlocked.map((r) => r.analysisId)
+    } else {
+      /** Offline dev: trust signed entitlement cookies when DATABASE_URL is unset. */
+      proReportGrantedAnalysisIds = rawAids
+    }
   }
 
   return {

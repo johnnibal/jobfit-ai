@@ -3,6 +3,7 @@ import {
  testimonialsShowPlaceholderBanner,
  type Testimonial,
 } from '@/lib/marketing/testimonials'
+import { card, sectionHeading, textBody, textMuted } from '@/components/ui/theme'
 
 function StarRow({ rating, illustrative }: { rating: Testimonial['rating']; illustrative: boolean }) {
  return (
@@ -42,7 +43,7 @@ export function TestimonialsSection({ idPrefix, className = '', compactTop = fal
  aria-labelledby={titleId}
  >
  <div className="mx-auto max-w-3xl text-center">
- <h2 id={titleId} className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+ <h2 id={titleId} className={`${sectionHeading} sm:text-3xl`}>
  What job seekers say
  </h2>
  {showBanner ? (
@@ -53,7 +54,7 @@ export function TestimonialsSection({ idPrefix, className = '', compactTop = fal
  Example feedback · layout placeholder (not real customer quotes)
  </p>
  ) : (
- <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600">
+ <p className={`mx-auto mt-3 max-w-xl text-sm ${textMuted}`}>
  From people using JobFit AI for applications in Germany and beyond.
  </p>
  )}
@@ -63,26 +64,26 @@ export function TestimonialsSection({ idPrefix, className = '', compactTop = fal
  {items.map((t, idx) => (
  <blockquote
  key={`${idPrefix}-${idx}`}
- className="flex flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8"
+ className={`flex flex-col ${card} p-6 sm:p-8`}
  >
- <div className="flex flex-wrap items-start justify-between gap-3 border-b border-zinc-200/80 pb-4">
+ <div className="flex flex-wrap items-start justify-between gap-3 border-b border-ash/40 pb-4">
  <div className="text-left">
  <cite className="not-italic">
- <span className="block text-sm font-semibold text-zinc-900">{t.name}</span>
- <span className="mt-1 block text-xs text-zinc-500">{t.role}</span>
- <span className="mt-1 block text-[11px] font-medium uppercase tracking-wider text-slate-600">
+ <span className="block text-sm font-semibold text-onyx">{t.name}</span>
+ <span className={`mt-1 block text-xs ${textMuted}`}>{t.role}</span>
+ <span className={`mt-1 block text-[11px] font-medium uppercase tracking-wider ${textMuted}`}>
  {t.country}
  </span>
  </cite>
  </div>
  <StarRow rating={t.rating} illustrative={showBanner} />
  </div>
- <p className="mt-4 flex-1 text-left text-sm leading-relaxed text-zinc-700">
- <span className="text-zinc-700/90" aria-hidden>
+ <p className={`mt-4 flex-1 text-left ${textBody}`}>
+ <span className="text-dim" aria-hidden>
  “
  </span>
  {t.quote}
- <span className="text-zinc-700/90" aria-hidden>
+ <span className="text-dim" aria-hidden>
  ”
  </span>
  </p>

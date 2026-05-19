@@ -18,22 +18,32 @@ import {
 } from '@/lib/jobfitStorage'
 import { AppNav } from '@/components/nav/AppNav'
 import { getAnalysisQuotaCap } from '@/lib/analysisPermissions'
+import { MONTHLY_PRO_ANALYSES_PER_MONTH } from '@/lib/planTypes'
 import { LABEL_BUY_PRO_REPORT, LABEL_SUBSCRIBE_MONTHLY_PRO } from '@/lib/planTypes'
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
+import { localBillingSandboxActive } from '@/lib/billing/localBillingSandbox'
 import { trackEvent } from '@/lib/analytics/track'
 import { isFitAnalysisOutput } from '@/lib/parseAnalysis'
+import { extractTextFromPdfFile } from '@/lib/pdf/extractPdfText'
 import {
   alertError,
   alertInfo,
   alertWarning,
-  btnPrimary,
-  card,
+  analyzerFormCard,
+  analyzerFormHeading,
+  analyzerFormHint,
+  analyzerFormLabel,
+  analyzerFormSubheading,
+  analyzerFormSubmit,
   cardPadding,
   formFieldGroup,
-  formHint,
-  formLabel,
   inputSurface,
+  analyzerPageContainer,
+  brandDot,
+  brandMark,
+  headerBar,
   pageMain,
+  textMuted,
 } from '@/components/ui/theme'
 
 const emptyBilling: SubscriptionBillingUi = {
@@ -70,6 +80,8 @@ export default function AnalyzePageClient() {
   const searchParams = useSearchParams()
   const autosaveIssuedRef = useRef<Set<string>>(new Set())
   const freeResultViewTrackedRef = useRef<string | null>(null)
+  const shouldScrollToResultsRef = useRef(false)
+  const gatedAnalysisRef = useRef<GatedAnalysisPayload | null>(null)
 
   const [cv, setCv] = useState('')
   const [jd, setJd] = useState('')
@@ -90,6 +102,8 @@ export default function AnalyzePageClient() {
   const [subscribeMonthlyError, setSubscribeMonthlyError] = useState<string | null>(null)
   const [portalBusy, setPortalBusy] = useState(false)
   const [portalError, setPortalError] = useState<string | null>(null)
+  const [cvUploadBusy, setCvUploadBusy] = useState(false)
+  const [cvUploadError, setCvUploadError] = useState<string | null>(null)
 
   const refreshUsage = useCallback(() => {
     setUsageUi({ status: 'loading' })
@@ -178,6 +192,21 @@ export default function AnalyzePageClient() {
     fetchBillingSession()
   }, [fetchBillingSession])
 
+  useEffect(() => {
+    gatedAnalysisRef.current = gatedAnalysis
+  }, [gatedAnalysis])
+
+  useEffect(() => {
+    if (!shouldScrollToResultsRef.current || loading) return
+    if (!result && !gatedAnalysis) return
+    requestAnimationFrame(() => {
+      if (!shouldScrollToResultsRef.current) return
+      shouldScrollToResultsRef.current = false
+      const targetId = gatedAnalysis ? 'jobfit-email-gate' : 'jobfit-analysis-results'
+      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [loading, result, gatedAnalysis])
+
   /** Stripe Checkout returns here after Pro Report payment — persist signed HttpOnly grants cookie via server. */
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -237,6 +266,20 @@ export default function AnalyzePageClient() {
       trackEvent('free_result_viewed', { had_email_gate: hadEmailGate })
     },
     [monthlyProActive, mergedFullyUnlockedAnalysisIds]
+  )
+
+  const releaseGatedAnalysis = useCallback(
+    (opts: { emailSaveNotice: string | null }) => {
+      const g = gatedAnalysisRef.current
+      if (!g) return
+      setGrowthEmailNotice(opts.emailSaveNotice)
+      setResult(g.resultText)
+      setAnalysisId(g.analysisId)
+      setGatedAnalysis(null)
+      shouldScrollToResultsRef.current = true
+      maybeTrackFreeResultView(g.analysisId, true)
+    },
+    [maybeTrackFreeResultView]
   )
 
   const savedReportsNavLocked = !monthlyProActive && reportsAccessMode === 'none'
@@ -301,11 +344,13 @@ export default function AnalyzePageClient() {
     const fallbackCap = getAnalysisQuotaCap(monthlyProActive)
     const fallbackPeriod = monthlyProActive ? ('month' as const) : ('day' as const)
     if (usageUi.status === 'ready') {
+      const demoMonthly = monthlyProActive && !usageUi.monthlyProVerified
       return {
-        quotaUsed: usageUi.used,
-        quotaCap: usageUi.limit,
-        quotaPeriod: usageUi.quotaMode === 'monthly' ? ('month' as const) : ('day' as const),
-        quotaRemaining: usageUi.remaining,
+        quotaUsed: demoMonthly ? 0 : usageUi.used,
+        quotaCap: demoMonthly ? MONTHLY_PRO_ANALYSES_PER_MONTH : usageUi.limit,
+        quotaPeriod:
+          demoMonthly || usageUi.quotaMode === 'monthly' ? ('month' as const) : ('day' as const),
+        quotaRemaining: demoMonthly ? MONTHLY_PRO_ANALYSES_PER_MONTH : usageUi.remaining,
         quotaLoading: false,
         quotaError: null as string | null,
       }
@@ -332,31 +377,19 @@ export default function AnalyzePageClient() {
 
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onload = async () => {
-      const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf')
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
-
-      const typedarray = new Uint8Array(reader.result as ArrayBuffer)
-      const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise
-      let extractedText = ''
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i)
-        const content = await page.getTextContent()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pageText = (content.items as any[])
-          .map((item) => (typeof item?.str === 'string' ? item.str : ''))
-          .join(' ')
-
-        extractedText += pageText + '\n\n'
-      }
-
+    setCvUploadError(null)
+    setCvUploadBusy(true)
+    try {
+      const extractedText = await extractTextFromPdfFile(file)
       setCv(extractedText)
+    } catch (err) {
+      setCvUploadError(err instanceof Error ? err.message : 'Could not read this PDF.')
+    } finally {
+      setCvUploadBusy(false)
     }
-    reader.readAsArrayBuffer(file)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -453,8 +486,9 @@ export default function AnalyzePageClient() {
 
       const serverFullAccess = data.fullReportAccess === true
 
-      /** Growth email gate is for free previews only — paid tiers should see results immediately */
+      /** Growth email gate is for free previews only — paid tiers and local dev skip it */
       const skipGrowthEmailGate =
+        process.env.NODE_ENV === 'development' ||
         monthlyProActive ||
         (usageUi.status === 'ready' && usageUi.monthlyProVerified) ||
         serverFullAccess
@@ -496,6 +530,27 @@ export default function AnalyzePageClient() {
     })
   }
 
+  const handleDemoEnableMonthlyPro = useCallback(() => {
+    setEntitlements((prev) => {
+      const next = demoSetMonthlyPro(prev, true)
+      writeEntitlements(next)
+      return next
+    })
+    refreshUsage()
+  }, [refreshUsage])
+
+  const handleLocalDevProReportFallback = useCallback(() => {
+    setEntitlements((prev) => {
+      let next = demoGrantProReportCredit(prev)
+      if (analysisId) {
+        const applied = consumeProReportCreditForAnalysis(next, analysisId)
+        if (applied) next = applied
+      }
+      writeEntitlements(next)
+      return next
+    })
+  }, [analysisId])
+
   const handleDemoToggleMonthlyPro = () => {
     setEntitlements((prev) => {
       const next = demoSetMonthlyPro(prev, !prev.monthlyProActive)
@@ -507,6 +562,12 @@ export default function AnalyzePageClient() {
   const handleSubscribeMonthly = async (checkoutSurface: string = 'insights_billing') => {
     trackEvent('stripe_checkout_started', { product: 'monthly_pro', surface: checkoutSurface })
     setSubscribeMonthlyError(null)
+
+    if (localBillingSandboxActive()) {
+      handleDemoEnableMonthlyPro()
+      return
+    }
+
     setSubscribeMonthlyBusy(true)
     try {
       const res = await fetch('/api/checkout/monthly-pro', {
@@ -519,6 +580,10 @@ export default function AnalyzePageClient() {
 
       if (!res.ok) {
         if (res.status === 503 && data.fallbackDemo) {
+          if (process.env.NODE_ENV === 'development') {
+            handleDemoEnableMonthlyPro()
+            return
+          }
           setSubscribeMonthlyError(
             typeof data.error === 'string'
               ? data.error
@@ -569,6 +634,20 @@ export default function AnalyzePageClient() {
 
   const hasStripeBillingHistory = billing.fetched && billing.subscriptionStatus !== 'none'
 
+  const showApplicationInputs = !result && !gatedAnalysis
+  const showEmailGate = Boolean(gatedAnalysis) && !result
+  const inputsColumnVisible = showApplicationInputs || showEmailGate
+
+  const handleNewAnalysis = () => {
+    setResult(null)
+    setAnalysisId(null)
+    setGatedAnalysis(null)
+    setGrowthEmailNotice(null)
+    requestAnimationFrame(() => {
+      document.getElementById('jobfit-application-inputs')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
   return (
     <main className={pageMain}>
       <ConversionUpgradeModal
@@ -585,11 +664,13 @@ export default function AnalyzePageClient() {
         hasStripeBillingHistory={hasStripeBillingHistory}
         onOpenCustomerPortal={handleOpenPortal}
         portalBusy={portalBusy}
+        onLocalDevProReportFallback={handleLocalDevProReportFallback}
       />
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-6">
-          <Link href="/" className="text-sm font-semibold tracking-tight text-zinc-900 hover:text-zinc-600">
+      <section className={analyzerPageContainer}>
+        <div className={headerBar}>
+          <Link href="/" className={brandMark}>
+            <span className={brandDot} aria-hidden />
             JobFit AI
           </Link>
           <AppNav
@@ -602,30 +683,26 @@ export default function AnalyzePageClient() {
           />
         </div>
 
-        <div className="mb-8 max-w-3xl">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+        <div className="mb-10 mt-8 max-w-3xl sm:mt-10">
+          <h1 className="text-[1.75rem] font-bold leading-tight text-onyx sm:text-[2rem]">
             Analyze your CV against the role
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
+          <p className={`mt-3 max-w-2xl text-base leading-relaxed ${textMuted}`}>
             Paste your CV and the job posting. JobFit AI scores fit, highlights gaps, and suggests concrete edits.
           </p>
         </div>
 
-        <div
-          className={
-            result || gatedAnalysis
-              ? 'grid gap-6 lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)_minmax(260px,288px)] lg:items-start'
-              : 'grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start'
-          }
-        >
+        <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+          {showApplicationInputs ? (
           <form
+            id="jobfit-application-inputs"
             onSubmit={handleSubmit}
-            className={`${card} ${cardPadding} order-1 lg:sticky lg:top-6 lg:self-start`}
+            className={`${analyzerFormCard} ${cardPadding} order-1 scroll-mt-24 lg:col-start-1 lg:row-start-1 lg:self-start`}
           >
             <div className={formFieldGroup}>
-              <div className="border-b border-zinc-100 pb-4">
-                <h2 className="text-sm font-semibold text-zinc-900">Application inputs</h2>
-                <p className="mt-1 text-xs text-zinc-500">Required for each analysis run.</p>
+              <div className="border-b border-ash/40 pb-4">
+                <h2 className={analyzerFormHeading}>Application inputs</h2>
+                <p className={analyzerFormSubheading}>Required for each analysis run.</p>
               </div>
 
               {usageUi.status === 'ready' && !usageUi.canRun ? (
@@ -641,24 +718,29 @@ export default function AnalyzePageClient() {
               ) : null}
 
               <div>
-                <label htmlFor="cv-pdf-upload" className={formLabel}>
+                <label htmlFor="cv-pdf-upload" className={analyzerFormLabel}>
                   CV file (PDF)
                 </label>
-                <p className={`mt-1 ${formHint}`}>Optional. Upload to extract text into the field below.</p>
+                <p className={`mt-1 ${analyzerFormHint}`}>Optional. Upload to extract text into the field below.</p>
                 <input
                   id="cv-pdf-upload"
                   type="file"
-                  accept="application/pdf"
-                  onChange={handlePdfUpload}
-                  className="mt-2 block w-full text-sm text-zinc-600 file:mr-3 file:rounded-md file:border file:border-zinc-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-zinc-800 hover:file:bg-zinc-50"
+                  accept="application/pdf,.pdf"
+                  disabled={cvUploadBusy}
+                  onChange={(e) => void handlePdfUpload(e)}
+                  className="mt-2 block w-full text-sm text-dim file:mr-3 file:rounded-md file:border file:border-onyx/15 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-onyx hover:file:bg-ash/20 disabled:opacity-50"
                 />
+                {cvUploadBusy ? (
+                  <p className={`mt-2 ${analyzerFormHint}`}>Extracting text from PDF…</p>
+                ) : null}
+                {cvUploadError ? <p className="mt-2 text-sm text-brick">{cvUploadError}</p> : null}
               </div>
 
               <div>
-                <label htmlFor="cv-text" className={formLabel}>
+                <label htmlFor="cv-text" className={analyzerFormLabel}>
                   CV text
                 </label>
-                <p className={`mt-1 ${formHint}`}>Paste or edit your resume. Include roles, skills, and dates.</p>
+                <p className={`mt-1 ${analyzerFormHint}`}>Paste or edit your resume. Include roles, skills, and dates.</p>
                 <textarea
                   id="cv-text"
                   value={cv}
@@ -671,10 +753,10 @@ export default function AnalyzePageClient() {
               </div>
 
               <div>
-                <label htmlFor="job-description" className={formLabel}>
+                <label htmlFor="job-description" className={analyzerFormLabel}>
                   Job description
                 </label>
-                <p className={`mt-1 ${formHint}`}>Paste the full posting you are applying to.</p>
+                <p className={`mt-1 ${analyzerFormHint}`}>Paste the full posting you are applying to.</p>
                 <textarea
                   id="job-description"
                   value={jd}
@@ -686,7 +768,7 @@ export default function AnalyzePageClient() {
                 />
               </div>
 
-              <button type="submit" disabled={submitDisabled} className={`${btnPrimary} w-full`}>
+              <button type="submit" disabled={submitDisabled} className={analyzerFormSubmit}>
                 {loading
                   ? 'Analyzing…'
                   : usageUi.status === 'loading'
@@ -699,13 +781,28 @@ export default function AnalyzePageClient() {
               </button>
             </div>
           </form>
+          ) : null}
+
+          {showEmailGate && gatedAnalysis ? (
+            <div
+              id="jobfit-email-gate"
+              className={`${analyzerFormCard} ${cardPadding} order-1 scroll-mt-24 lg:col-start-1 lg:row-start-1 lg:self-start`}
+            >
+              <AnalysisResultEmailGate
+                analysisId={gatedAnalysis.analysisId}
+                onRelease={releaseGatedAnalysis}
+              />
+            </div>
+          ) : null}
 
           {growthEmailNotice && !(result || gatedAnalysis) ? (
-            <div className={`order-2 ${alertInfo}`}>{growthEmailNotice}</div>
+            <div className={`order-3 lg:col-span-2 ${alertInfo}`}>{growthEmailNotice}</div>
           ) : null}
 
           <AnalysisInsightsPanel
               result={result}
+              inputsColumnVisible={inputsColumnVisible}
+              onNewAnalysis={result ? handleNewAnalysis : undefined}
               monthlyProActive={monthlyProActive}
               subscriberMonthlyPro={billing.fetched && billing.monthlyProActive}
               analysisId={analysisId}
@@ -720,6 +817,7 @@ export default function AnalyzePageClient() {
               billing={billing}
               onRefreshBilling={fetchBillingSession}
               onSubscribeMonthly={() => handleSubscribeMonthly('insights_billing')}
+              onDemoEnableMonthlyPro={handleDemoEnableMonthlyPro}
               subscribeMonthlyBusy={subscribeMonthlyBusy}
               subscribeMonthlyError={subscribeMonthlyError}
               onOpenCustomerPortal={handleOpenPortal}
@@ -728,25 +826,11 @@ export default function AnalyzePageClient() {
               onApplyProReportCredit={handleApplyProReportCredit}
               onDemoAddProCredit={handleDemoAddProCredit}
               onDemoToggleMonthlyPro={handleDemoToggleMonthlyPro}
+              onLocalDevProReportFallback={handleLocalDevProReportFallback}
               onOpenUpgradeModal={
                 monthlyProActive ? undefined : () => openUpgradeModal('conversion')
               }
               savedReportsDashboardAllowed={reportsDashboardAllowed}
-              emptyStateOverride={
-                gatedAnalysis ? (
-                  <AnalysisResultEmailGate
-                    analysisId={gatedAnalysis.analysisId}
-                    onRelease={(opts) => {
-                      const g = gatedAnalysis
-                      setGrowthEmailNotice(opts.emailSaveNotice)
-                      setResult(g.resultText)
-                      setAnalysisId(g.analysisId)
-                      setGatedAnalysis(null)
-                      maybeTrackFreeResultView(g.analysisId, true)
-                    }}
-                  />
-                ) : undefined
-              }
               cvText={cv}
               jobDescription={jd}
             />

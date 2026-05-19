@@ -22,7 +22,12 @@ export async function POST(req: Request) {
   try {
     if (!process.env.DATABASE_URL) {
       return NextResponse.json(
-        { error: 'Database is not configured.', code: 'NO_DATABASE', fallbackDemo: true },
+        {
+          error:
+            'Prepaid Pro Report checkout needs DATABASE_URL. On localhost, use the Billing sandbox (+1 Pro credit) instead.',
+          code: 'NO_DATABASE',
+          fallbackDemo: true,
+        },
         { status: 503 }
       )
     }

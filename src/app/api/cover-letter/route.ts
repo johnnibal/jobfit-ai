@@ -10,6 +10,7 @@ import {
 } from '@/lib/coverLetterOptions'
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { requirePremiumAccess } from '@/lib/billing/requirePremiumAccess.server'
+import { getOpenRouterApiKey } from '@/lib/openrouter/getOpenRouterApiKey'
 
 const MIN_CHARS = 50
 
@@ -99,9 +100,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Cover letter generation requires Pro Report or Monthly Pro.' }, { status: 403 })
   }
 
-  const apiKey = process.env.OPENROUTER_API_KEY
+  const apiKey = getOpenRouterApiKey()
   if (!apiKey) {
-    return NextResponse.json({ error: 'OPENROUTER_API_KEY is not configured on the server.' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'OPENROUTER_API_KEY (or OPENAI_API_KEY) is not configured on the server.' },
+      { status: 500 }
+    )
   }
 
   const prompt = buildCoverLetterPrompt({

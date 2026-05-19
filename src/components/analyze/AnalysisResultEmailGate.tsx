@@ -6,7 +6,7 @@ import {
  EMAIL_CAPTURE_CONSENT_LABEL,
  EMAIL_CAPTURE_CONSENT_VERSION,
 } from '@/lib/growth/emailCaptureConsent'
-import { btnPrimary } from '@/components/ui/theme'
+import { btnPrimary, btnSecondary, card, cardPadding, inputSurface, labelCaps, textLink, textMuted } from '@/components/ui/theme'
 
 type Props = {
  analysisId: string
@@ -73,14 +73,14 @@ export function AnalysisResultEmailGate({ analysisId, onRelease }: Props) {
  }
 
  return (
- <div className="rounded-xl border border-zinc-300 bg-zinc-50 p-6 shadow-sm sm:p-8">
- <h3 className="text-lg font-semibold text-zinc-700 sm:text-xl">
+ <div className={`${card} ${cardPadding}`}>
+ <h3 className="text-lg font-semibold text-onyx sm:text-xl">
  Where should we send your application report?
  </h3>
- <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+ <p className={`mt-2 text-sm leading-relaxed ${textMuted}`}>
  Optional. You can view your full free result on this page either way. We only store your email if you submit the
  form with consent below (lawful basis: consent under data protection rules that apply to us; see{' '}
- <Link href="/privacy" className="text-zinc-700/90 underline-offset-2 hover:text-zinc-800 hover:underline">
+ <Link href="/privacy" className={textLink}>
  Privacy
  </Link>
  ). Unsubscribe or deletion requests can be handled when we contact you; we do not add you to marketing lists
@@ -88,7 +88,7 @@ export function AnalysisResultEmailGate({ analysisId, onRelease }: Props) {
  </p>
 
  <div className="mt-5 space-y-4">
- <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+ <label className={`block ${labelCaps}`}>
  Email address
  <input
  type="email"
@@ -97,18 +97,18 @@ export function AnalysisResultEmailGate({ analysisId, onRelease }: Props) {
  value={email}
  onChange={(e) => setEmail(e.target.value)}
  disabled={busy}
- className="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 disabled:opacity-60"
+ className={`mt-2 ${inputSurface} text-sm disabled:opacity-60`}
  placeholder="you@example.com"
  />
  </label>
 
- <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-zinc-700">
+ <label className={`flex cursor-pointer items-start gap-3 text-sm leading-relaxed ${textMuted}`}>
  <input
  type="checkbox"
  checked={consent}
  onChange={(e) => setConsent(e.target.checked)}
  disabled={busy}
- className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-400 disabled:opacity-60"
+ className="mt-1 h-4 w-4 shrink-0 rounded border-ash/60 text-onyx focus:ring-brick/20 disabled:opacity-60"
  />
  <span>{EMAIL_CAPTURE_CONSENT_LABEL}</span>
  </label>
@@ -125,7 +125,7 @@ export function AnalysisResultEmailGate({ analysisId, onRelease }: Props) {
  type="button"
  onClick={continueWithoutEmail}
  disabled={busy}
- className="inline-flex flex-1 items-center justify-center rounded-lg border border-zinc-300 bg-white px-6 py-3 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+ className={`${btnSecondary} flex-1 px-6 py-3 sm:flex-none disabled:cursor-not-allowed disabled:opacity-60`}
  >
  Continue without email
  </button>

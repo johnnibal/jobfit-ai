@@ -57,7 +57,7 @@ export default function ProReportSalesPage() {
  href="/"
  className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 transition hover:text-zinc-700"
  >
- <span className="h-2 w-2 rounded-full bg-indigo-600" aria-hidden />
+ <span className="h-2 w-2 rounded-full bg-zinc-900" aria-hidden />
  JobFit AI
  </Link>
  <nav className="flex flex-wrap gap-3 text-sm font-medium">

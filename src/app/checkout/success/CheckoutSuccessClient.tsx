@@ -157,14 +157,14 @@ export default function CheckoutSuccessClient() {
  <p className="mt-3 text-sm leading-relaxed text-zinc-600">{CHECKOUT_CONFIRM_LOADING_PAYMENT_BODY}</p>
  <div className="mt-8 flex gap-2">
  <div className="h-2 flex-1 rounded-full bg-zinc-100" />
- <div className="h-2 w-16 rounded-full bg-blue-50" />
+ <div className="h-2 w-16 rounded-full bg-zinc-300" />
  </div>
  </>
  ) : null}
 
  {phase === 'ok' ? (
  <>
- <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium uppercase tracking-wide text-emerald-800">
+ <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-zinc-100 px-3 py-1 text-xs font-medium uppercase tracking-wide text-zinc-800">
  Payment successful
  </div>
  <h1 className="text-2xl font-semibold text-zinc-900">

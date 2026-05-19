@@ -25,6 +25,10 @@ export function usageLimitsDisabled(): boolean {
   return v === '1' || v?.toLowerCase() === 'true'
 }
 
+export function isDatabaseConfigured(): boolean {
+  return Boolean(process.env.DATABASE_URL?.trim())
+}
+
 export function utcDayKey(d = new Date()): string {
   return d.toISOString().slice(0, 10)
 }
@@ -85,7 +89,7 @@ export async function resolveAnalysisQuotaSubject(params: {
       : null
 
   let monthlyProVerified = false
-  if (cid) {
+  if (cid && isDatabaseConfigured()) {
     monthlyProVerified = await verifyMonthlyProStripeCustomer(cid)
     if (monthlyProVerified) {
       return {
@@ -134,6 +138,10 @@ export function countsForMode(
  * if the AI request fails after this succeeds.
  */
 export async function incrementAnalysisUsage(subject: UsageSubject, mode: 'daily' | 'monthly'): Promise<void> {
+  if (!isDatabaseConfigured()) {
+    if (usageLimitsDisabled()) return
+    throw new Error('DATABASE_URL is not configured.')
+  }
   await prisma.$transaction(
     async (tx) => {
       const where = subjectWhere(subject)

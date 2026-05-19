@@ -39,9 +39,9 @@ export function AppNav({ monthlyProActive, savedReportsLocked, onLockedSavedRepo
         <button
           type="button"
           onClick={() => onLockedSavedReports?.()}
-          className={`inline-flex items-center gap-1.5 ${navLink} text-zinc-400`}
+          className={`inline-flex items-center gap-1.5 ${navLink} opacity-60`}
         >
-          <LockGlyph className="text-zinc-400" />
+          <LockGlyph className="opacity-60" />
           Saved Reports
         </button>
       ) : (

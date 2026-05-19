@@ -36,6 +36,7 @@ import {
   verifyAnonymousCookie,
 } from '@/lib/usage/anonymousCookie'
 import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
+import { getOpenRouterApiKey } from '@/lib/openrouter/getOpenRouterApiKey'
 
 function buildAnalysisPrompt(cv: string, jd: string) {
   return `
@@ -137,7 +138,7 @@ export async function POST(req: Request) {
     jar.get(JOBFIT_MONTHLY_PRO_COOKIE)?.value
   )
 
-  const apiKey = process.env.OPENROUTER_API_KEY
+  const apiKey = getOpenRouterApiKey()
 
   if (normalizedCv.length < 50 || !/[a-zA-Z]/.test(normalizedCv)) {
     return respond({ message: 'Please provide a valid CV or resume text.' }, 400)
@@ -148,7 +149,7 @@ export async function POST(req: Request) {
   }
 
   if (!apiKey) {
-    return respond({ error: 'OPENROUTER_API_KEY is not configured on the server.' }, 500)
+    return respond({ error: 'OPENROUTER_API_KEY (or OPENAI_API_KEY) is not configured on the server.' }, 500)
   }
 
   const authenticatedUserId = await getAuthenticatedJobFitUserId()

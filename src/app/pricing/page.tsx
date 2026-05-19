@@ -9,15 +9,22 @@ import {
   PRICE_PRO_REPORT_EUR,
 } from '@/lib/planTypes'
 import {
-  badge,
+  badgeRecommended,
   brandDot,
   brandMark,
   btnPrimary,
   btnSecondary,
+  bulletText,
+  card,
   cardFeatured,
+  footerBar,
+  headerBar,
   iconAccent,
   pageMain,
+  pricingPlanCard,
+  sectionHeading,
   textLink,
+  textMuted,
 } from '@/components/ui/theme'
 
 export const metadata: Metadata = {
@@ -44,21 +51,20 @@ function CheckIcon() {
 
 function FeatureItem({ children }: { children: ReactNode }) {
   return (
-    <li className="flex gap-2.5 text-sm leading-relaxed text-zinc-700">
+    <li className={`flex gap-2.5 ${bulletText}`}>
       <CheckIcon />
       <span>{children}</span>
     </li>
   )
 }
 
-const planCard =
-  'flex min-w-0 flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-7'
+const planCard = pricingPlanCard
 
 export default function PricingPage() {
   return (
     <main className={pageMain}>
       <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:pb-24 lg:pt-10">
-        <header className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-6">
+        <header className={`mb-10 flex flex-wrap items-center justify-between gap-4 ${headerBar}`}>
           <Link href="/" className={brandMark}>
             <span className={brandDot} aria-hidden />
             JobFit AI
@@ -74,10 +80,10 @@ export default function PricingPage() {
         </header>
 
         <div className="mx-auto max-w-2xl text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+          <h1 className={`${sectionHeading} sm:text-4xl`}>
             Simple pricing
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-600 sm:text-base">
+          <p className={`mt-3 text-sm leading-relaxed sm:text-base ${textMuted}`}>
             Start free. Pay only when you need a full report or apply to many roles in a month. Checkout is
             handled by Stripe.
           </p>
@@ -87,11 +93,11 @@ export default function PricingPage() {
           {/* Free */}
           <article className={planCard}>
             <div className="mb-5">
-              <h2 className="text-base font-semibold text-zinc-900">Free</h2>
+              <h2 className="text-base font-semibold text-onyx">Free</h2>
               <p className="mt-3 flex items-baseline gap-1">
-                <span className="text-3xl font-semibold tabular-nums text-zinc-900">€0</span>
+                <span className="text-3xl font-semibold tabular-nums text-onyx">€0</span>
               </p>
-              <p className="mt-1 text-xs text-zinc-500">No card required</p>
+              <p className={`mt-1 text-xs ${textMuted}`}>No card required</p>
             </div>
             <ul className="flex flex-1 flex-col gap-2.5">
               <FeatureItem>1 free analysis per day</FeatureItem>
@@ -104,16 +110,16 @@ export default function PricingPage() {
 
           {/* Pro Report (recommended) */}
           <article className={`${cardFeatured} relative flex min-w-0 flex-col p-6 sm:p-7`}>
-            <span className={`${badge} absolute -top-2.5 left-4`}>
+            <span className={`${badgeRecommended} absolute -top-2.5 left-4`}>
               Recommended
             </span>
             <div className="mb-5 pt-1">
-              <h2 className="text-base font-semibold text-zinc-900">Pro Report</h2>
+              <h2 className="text-base font-semibold text-onyx">Pro Report</h2>
               <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span className="text-3xl font-semibold tabular-nums text-indigo-700">€{PRICE_PRO_REPORT_EUR}</span>
-                <span className="text-sm text-zinc-500">one-time</span>
+                <span className="text-3xl font-semibold tabular-nums text-onyx">€{PRICE_PRO_REPORT_EUR}</span>
+                <span className={`text-sm ${textMuted}`}>one-time</span>
               </p>
-              <p className="mt-1 text-xs text-zinc-500">One application, full report</p>
+              <p className={`mt-1 text-xs ${textMuted}`}>One application, full report</p>
             </div>
             <ul className="flex flex-1 flex-col gap-2.5">
               <FeatureItem>One paid analysis</FeatureItem>
@@ -129,7 +135,7 @@ export default function PricingPage() {
             </div>
             <Link
               href="/pro-report"
-              className="mt-3 block text-center text-xs text-zinc-500 underline-offset-2 hover:text-zinc-800 hover:underline"
+              className={`mt-3 block text-center text-xs ${textMuted} underline-offset-2 hover:text-onyx hover:underline`}
             >
               What is Pro Report?
             </Link>
@@ -138,12 +144,12 @@ export default function PricingPage() {
           {/* Monthly Pro */}
           <article className={planCard}>
             <div className="mb-5">
-              <h2 className="text-base font-semibold text-zinc-900">Monthly Pro</h2>
+              <h2 className="text-base font-semibold text-onyx">Monthly Pro</h2>
               <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span className="text-3xl font-semibold tabular-nums text-zinc-900">€{PRICE_MONTHLY_PRO_EUR}</span>
-                <span className="text-sm text-zinc-500">/month</span>
+                <span className="text-3xl font-semibold tabular-nums text-onyx">€{PRICE_MONTHLY_PRO_EUR}</span>
+                <span className={`text-sm ${textMuted}`}>/month</span>
               </p>
-              <p className="mt-1 text-xs text-zinc-500">Best for active job seekers</p>
+              <p className={`mt-1 text-xs ${textMuted}`}>Best for active job seekers</p>
             </div>
             <ul className="flex flex-1 flex-col gap-2.5">
               <FeatureItem>{MONTHLY_PRO_ANALYSES_PER_MONTH} analyses per month</FeatureItem>
@@ -159,28 +165,28 @@ export default function PricingPage() {
           </article>
         </div>
 
-        <p className="mx-auto mt-8 max-w-xl text-center text-xs leading-relaxed text-zinc-500">
+        <p className={`mx-auto mt-8 max-w-xl text-center text-xs leading-relaxed ${textMuted}`}>
           Prices in EUR. Taxes may apply at checkout. Your plan controls which features unlock after payment.
         </p>
 
         <TestimonialsSection idPrefix="pricing" compactTop className="mx-auto max-w-6xl pt-14" />
 
         <section className="mx-auto mt-16 max-w-2xl" aria-labelledby="faq-heading">
-          <h2 id="faq-heading" className="text-center text-xl font-semibold text-zinc-900">
+          <h2 id="faq-heading" className={`text-center ${sectionHeading} text-xl`}>
             Common questions
           </h2>
 
           <dl className="mt-8 space-y-3">
-            <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
-              <dt className="text-sm font-medium text-zinc-900">Can I use this for German job postings?</dt>
-              <dd className="mt-2 text-sm leading-relaxed text-zinc-600">
+            <div className={`${card} px-5 py-4`}>
+              <dt className="text-sm font-medium text-onyx">Can I use this for German job postings?</dt>
+              <dd className={`mt-2 text-sm leading-relaxed ${textMuted}`}>
                 Yes. Paste German or English CV and job text. The analyzer compares what you wrote with what the
                 employer asks for.
               </dd>
             </div>
-            <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
-              <dt className="text-sm font-medium text-zinc-900">Is my CV private?</dt>
-              <dd className="mt-2 text-sm leading-relaxed text-zinc-600">
+            <div className={`${card} px-5 py-4`}>
+              <dt className="text-sm font-medium text-onyx">Is my CV private?</dt>
+              <dd className={`mt-2 text-sm leading-relaxed ${textMuted}`}>
                 Your text is used only to generate your analysis. We do not train public models on it. See our{' '}
                 <Link href="/privacy" className={textLink}>
                   Privacy
@@ -188,9 +194,9 @@ export default function PricingPage() {
                 policy for retention and your rights.
               </dd>
             </div>
-            <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
-              <dt className="text-sm font-medium text-zinc-900">Can I cancel Monthly Pro?</dt>
-              <dd className="mt-2 text-sm leading-relaxed text-zinc-600">
+            <div className={`${card} px-5 py-4`}>
+              <dt className="text-sm font-medium text-onyx">Can I cancel Monthly Pro?</dt>
+              <dd className={`mt-2 text-sm leading-relaxed ${textMuted}`}>
                 Yes. Billing runs through Stripe. Cancel before your next renewal from the customer portal linked
                 after checkout.
               </dd>
@@ -198,22 +204,22 @@ export default function PricingPage() {
           </dl>
         </section>
 
-        <footer className="mx-auto mt-16 max-w-2xl border-t border-zinc-200 pt-8 text-center text-xs text-zinc-500">
-          <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2">
-            <Link href="/privacy" className="hover:text-zinc-800">
+        <footer className={`mx-auto mt-16 max-w-2xl ${footerBar}`}>
+          <nav className={`flex flex-wrap justify-center gap-x-4 gap-y-2 ${textMuted}`}>
+            <Link href="/privacy" className="transition hover:text-onyx">
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-zinc-800">
+            <Link href="/terms" className="transition hover:text-onyx">
               Terms
             </Link>
-            <Link href="/refund-policy" className="hover:text-zinc-800">
+            <Link href="/refund-policy" className="transition hover:text-onyx">
               Refunds
             </Link>
-            <Link href="/imprint" className="hover:text-zinc-800">
+            <Link href="/imprint" className="transition hover:text-onyx">
               Imprint
             </Link>
           </nav>
-          <Link href="/" className="mt-4 inline-block hover:text-zinc-800">
+          <Link href="/" className="mt-4 inline-block transition hover:text-onyx">
             Back to home
           </Link>
         </footer>

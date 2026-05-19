@@ -5,9 +5,12 @@ import { canRunAnalysis, getRemainingAnalyses } from '@/lib/monetizationUsage'
 import type { UsageQuotaSnapshot } from '@/lib/monetizationUsage'
 import {
   countsForMode,
+  isDatabaseConfigured,
   loadUsageRow,
   resolveAnalysisQuotaSubject,
+  usageLimitsDisabled,
 } from '@/lib/monetizationUsage.server'
+import { FREE_ANALYSES_PER_DAY } from '@/lib/planTypes'
 import {
   JOBFIT_ANON_COOKIE,
   mintAnonymousSessionId,
@@ -35,6 +38,30 @@ export async function GET() {
   }
 
   const authenticatedUserId = await getAuthenticatedJobFitUserId()
+
+  if (!isDatabaseConfigured()) {
+    const limit = FREE_ANALYSES_PER_DAY
+    const used = 0
+    const snapshot: UsageQuotaSnapshot = {
+      usedInPeriod: used,
+      limit,
+      period: 'day',
+      monthlyProVerified: false,
+    }
+    const canRun = usageLimitsDisabled() || canRunAnalysis(snapshot)
+    const res = NextResponse.json({
+      monthlyProVerified: false,
+      quotaMode: 'daily',
+      used,
+      limit,
+      remaining: getRemainingAnalyses(snapshot),
+      canRun,
+      prepaidProReportCreditEligible: false,
+      offline: true,
+    })
+    applyAnonymousSessionCookie(res, signedAnon)
+    return res
+  }
 
   const monthlyStripeCustomerFromBillingCookie = verifyMonthlyProEntitlementCookie(
     jar.get(JOBFIT_MONTHLY_PRO_COOKIE)?.value
