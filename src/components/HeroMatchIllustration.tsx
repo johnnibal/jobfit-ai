@@ -1,5 +1,6 @@
 import HeroMagnifyingGlassMark from '@/components/HeroMagnifyingGlassMark'
-import { heroFitScoreBubble, heroFrame, heroMiniCard, heroMiniCardTitle, heroSkillTag } from '@/components/ui/theme'
+import HeroFitScoreBubble from '@/components/HeroFitScoreBubble'
+import { heroFrame, heroMiniCard, heroMiniCardTitle, heroSkillTag } from '@/components/ui/theme'
 
 function HeroDocCard({ title, tags }: { title: string; tags: string[] }) {
   return (
@@ -47,15 +48,7 @@ export default function HeroMatchIllustration() {
 
           <div className="relative mx-auto mt-6 w-full max-w-[220px] sm:mx-0 sm:mt-0 sm:w-[220px]">
             <div className={`${heroMiniCard} max-w-none sm:max-w-[220px]`}>
-              <div className={heroFitScoreBubble}>
-                <p className="text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-dim">
-                  Fit score
-                </p>
-                <p className="text-center text-base font-semibold leading-tight tabular-nums">
-                  <span className="text-brick">87</span>
-                  <span className="text-brick">%</span>
-                </p>
-              </div>
+              <HeroFitScoreBubble />
               <div className="border-b border-ash/45 pb-3">
                 <div className="mb-2.5 h-1.5 w-9 rounded-sm bg-ash/75" aria-hidden />
                 <p className={heroMiniCardTitle}>Job description</p>

@@ -14,15 +14,15 @@ export const card = `rounded-[18px] border border-ash/90 bg-white ${cardShadow}`
 export const cardPadding = 'p-6'
 
 export const btnPrimary =
-  'inline-flex h-11 items-center justify-center rounded-[10px] bg-onyx px-[22px] text-sm font-medium text-white transition hover:bg-[#1a221a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick/20 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-flex h-11 cursor-pointer items-center justify-center rounded-[10px] bg-onyx px-[22px] text-sm font-medium text-white transition hover:bg-[#1a221a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick/20 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
 export const btnPrimaryBrick =
-  'inline-flex h-11 items-center justify-center rounded-[10px] bg-brick px-[22px] text-sm font-medium text-white transition hover:bg-[#a00110] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-flex h-11 cursor-pointer items-center justify-center rounded-[10px] bg-brick px-[22px] text-sm font-medium text-white transition hover:bg-[#a00110] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
 export const btnPrimaryFull = `${btnPrimary} w-full`
 
 export const btnSecondary =
-  'inline-flex h-11 items-center justify-center rounded-[10px] border border-ash bg-white px-[22px] text-sm font-medium text-onyx transition hover:bg-ash/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick/15 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-flex h-11 cursor-pointer items-center justify-center rounded-[10px] border border-ash bg-white px-[22px] text-sm font-medium text-onyx transition hover:bg-ash/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick/15 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
 export const btnSecondaryFull = `${btnSecondary} w-full`
 
@@ -42,7 +42,7 @@ export const cardFeatured =
   `rounded-[18px] border border-ash/90 bg-white ${cardShadow} border-t-2 border-t-brick`
 
 export const btnGhost =
-  'inline-flex h-10 items-center justify-center rounded-[10px] px-4 text-sm font-medium text-dim transition hover:bg-ash/15 hover:text-onyx'
+  'inline-flex h-10 cursor-pointer items-center justify-center rounded-[10px] px-4 text-sm font-medium text-dim transition hover:bg-ash/15 hover:text-onyx disabled:cursor-not-allowed disabled:opacity-50'
 
 export const alertWarning =
   'rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900'
