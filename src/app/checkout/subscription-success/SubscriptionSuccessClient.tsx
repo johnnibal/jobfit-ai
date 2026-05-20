@@ -9,7 +9,7 @@ import {
  SUCCESS_MONTHLY_PRO_ACTIVE_TITLE,
  SUCCESS_SUBSCRIPTION_LOADING_BODY,
 } from '@/lib/billing/checkoutSuccessCopy'
-import { btnPrimary } from '@/components/ui/theme'
+import { btnPrimary, btnSecondary } from '@/components/ui/theme'
 
 export default function SubscriptionSuccessClient() {
  const searchParams = useSearchParams()
@@ -113,7 +113,7 @@ export default function SubscriptionSuccessClient() {
  <p className="mt-3 text-sm leading-relaxed text-red-800">{message}</p>
  <Link
  href="/analyze"
- className="mt-8 inline-flex w-full min-h-[44px] items-center justify-center rounded-lg border border-zinc-300 bg-white px-6 py-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
+ className={`${btnSecondary} mt-8 w-full px-6 py-3`}
  >
  Back to analyzer
  </Link>

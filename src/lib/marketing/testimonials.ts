@@ -1,12 +1,10 @@
 /**
- * Testimonials visibility (no real quotes ship by default).
+ * Testimonials visibility (hidden by default until real quotes are added).
  *
  * Env: `NEXT_PUBLIC_JOBFIT_TESTIMONIALS`
- * - `off` | `false` | `0` | `hidden` — hide the section everywhere.
- * - `placeholder` | `demo` | `example` | `true` | `1` — show clearly labeled example cards (any environment).
- * - `published` — show {@link PUBLISHED_TESTIMONIALS} only if that list is non-empty (real quotes you add yourself).
- *
- * If unset: **development** shows placeholders; **production** hides the section (opt-in for real or demo copy).
+ * - unset / `off` / `false` / `0` / `hidden` — hide the section everywhere.
+ * - `placeholder` | `demo` | `example` | `true` | `1` — show clearly labeled example cards (local QA only).
+ * - `published` — show {@link PUBLISHED_TESTIMONIALS} only if that list is non-empty.
  */
 
 export type Testimonial = {
@@ -55,7 +53,6 @@ export type TestimonialsSectionMode = 'hidden' | 'placeholder' | 'published'
 export function getTestimonialsSectionMode(): TestimonialsSectionMode {
   const v = normalizeEnv()
   if (v === 'published' && PUBLISHED_TESTIMONIALS.length > 0) return 'published'
-  if (v === 'off' || v === 'false' || v === '0' || v === 'hidden') return 'hidden'
   if (
     v === 'placeholder' ||
     v === 'demo' ||
@@ -65,7 +62,6 @@ export function getTestimonialsSectionMode(): TestimonialsSectionMode {
   ) {
     return 'placeholder'
   }
-  if (process.env.NODE_ENV === 'development') return 'placeholder'
   return 'hidden'
 }
 

@@ -3,14 +3,15 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 
 import {
- COPY_PRO_REPORT_INCLUDES,
- COPY_PRO_REPORT_ONELINE,
- PRICE_PRO_REPORT_EUR,
+  COPY_PRO_REPORT_INCLUDES,
+  COPY_PRO_REPORT_ONELINE,
+  PRICE_PRO_REPORT_EUR,
 } from '@/lib/planTypes'
 import {
- ProReportLandingPrimaryCtas,
- ProReportLandingPricePrimaryCta,
+  ProReportLandingPrimaryCtas,
+  ProReportLandingPricePrimaryCta,
 } from '@/components/marketing/ProReportLandingCtas'
+import { brandDot, brandMark, headerBar, navBtn, pageMain } from '@/components/ui/theme'
 
 export const metadata: Metadata = {
  title: 'Pro Report · JobFit AI',
@@ -50,27 +51,18 @@ function FaqItem({ q, children }: { q: string; children: ReactNode }) {
 
 export default function ProReportSalesPage() {
  return (
- <main className="min-h-screen bg-zinc-50 text-zinc-900">
- <div className="mx-auto w-full max-w-3xl px-4 pb-24 pt-10 sm:px-6 lg:px-8 lg:pb-28 lg:pt-14">
- <header className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
- <Link
- href="/"
- className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 transition hover:text-zinc-700"
- >
- <span className="h-2 w-2 rounded-full bg-zinc-900" aria-hidden />
+ <main className={pageMain}>
+ <div className="mx-auto w-full max-w-3xl px-4 pb-24 pt-8 sm:px-6 lg:px-8 lg:pb-28 lg:pt-10">
+ <header className={`mb-12 ${headerBar}`}>
+ <Link href="/" className={`${brandMark} shrink-0`}>
+ <span className={brandDot} aria-hidden />
  JobFit AI
  </Link>
- <nav className="flex flex-wrap gap-3 text-sm font-medium">
- <Link
- href="/analyze"
- className="rounded-full border border-zinc-300 bg-zinc-100 px-4 py-2 text-zinc-800 transition hover:border-zinc-300 hover:bg-zinc-100"
- >
+ <nav className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end" aria-label="Primary">
+ <Link href="/analyze" className={navBtn}>
  Analyzer
  </Link>
- <Link
- href="/pricing"
- className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-zinc-800 transition hover:border-zinc-300 hover:text-zinc-900"
- >
+ <Link href="/pricing" className={navBtn}>
  All plans
  </Link>
  </nav>

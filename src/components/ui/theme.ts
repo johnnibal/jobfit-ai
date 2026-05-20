@@ -44,6 +44,11 @@ export const cardFeatured =
 export const btnGhost =
   'inline-flex h-10 cursor-pointer items-center justify-center rounded-[10px] px-4 text-sm font-medium text-dim transition hover:bg-ash/15 hover:text-onyx disabled:cursor-not-allowed disabled:opacity-50'
 
+/** Compact header nav buttons — same onyx/white palette on mobile and desktop */
+export const navBtn = `${btnSecondary} min-h-9 px-3 py-2 text-sm sm:min-h-11 sm:px-[22px]`
+
+export const navBtnPrimary = `${btnPrimary} min-h-9 px-3 py-2 text-sm sm:min-h-11 sm:px-[22px]`
+
 export const alertWarning =
   'rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900'
 
@@ -104,7 +109,8 @@ export const textMuted = 'text-sm leading-relaxed text-dim'
 
 export const bulletText = 'text-[15px] leading-relaxed text-dim'
 
-export const headerBar = 'flex h-[72px] items-center justify-between border-b border-ash/90'
+export const headerBar =
+  'flex flex-col items-start gap-3 border-b border-ash/90 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0 sm:min-h-[72px]'
 
 export const footerBar = 'border-t border-ash/90 pt-10 text-center text-sm text-dim'
 

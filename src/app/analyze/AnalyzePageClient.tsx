@@ -715,8 +715,8 @@ export default function AnalyzePageClient() {
       />
 
       <section className={analyzerPageContainer}>
-        <div className={headerBar}>
-          <Link href="/" className={brandMark}>
+        <header className={headerBar}>
+          <Link href="/" className={`${brandMark} shrink-0`}>
             <span className={brandDot} aria-hidden />
             JobFit AI
           </Link>
@@ -728,7 +728,7 @@ export default function AnalyzePageClient() {
               openUpgradeModal('conversion')
             }}
           />
-        </div>
+        </header>
 
         <div className="mb-10 mt-8 max-w-3xl sm:mt-10">
           <h1 className="text-[1.75rem] font-bold leading-tight text-onyx sm:text-[2rem]">

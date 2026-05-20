@@ -16,6 +16,7 @@ import {
   btnPrimary,
   btnSecondary,
   btnSecondaryFull,
+  navBtn,
   card,
   cardPadding,
   footerBar,
@@ -67,15 +68,15 @@ export default function Home() {
     <main className={pageMain}>
       <div className={`${pageContainer} pb-20 lg:pb-24`}>
         <header className={headerBar}>
-          <Link href="/" className={brandMark}>
+          <Link href="/" className={`${brandMark} shrink-0`}>
             <span className={brandDot} aria-hidden />
             JobFit AI
           </Link>
-          <nav className="flex flex-wrap gap-2" aria-label="Primary">
-            <HomeTrackedLink href="/analyze" ctaId="header_analyze" className={btnSecondary}>
+          <nav className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end" aria-label="Primary">
+            <HomeTrackedLink href="/analyze" ctaId="header_analyze" className={navBtn}>
               Analyze
             </HomeTrackedLink>
-            <HomeTrackedLink href="/pricing" ctaId="header_pricing" className={btnSecondary}>
+            <HomeTrackedLink href="/pricing" ctaId="header_pricing" className={navBtn}>
               Pricing
             </HomeTrackedLink>
           </nav>

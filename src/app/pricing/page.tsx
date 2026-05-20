@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { TestimonialsSection } from '@/components/marketing/TestimonialsSection'
 import { MonthlyProCheckoutButton, ProReportCheckoutButton } from '@/components/billing/PlanStripeCheckoutButtons'
 import {
   MONTHLY_PRO_ANALYSES_PER_MONTH,
@@ -14,6 +13,9 @@ import {
   brandMark,
   btnPrimary,
   btnSecondary,
+  btnSecondaryFull,
+  navBtn,
+  navBtnPrimary,
   card,
   footerBar,
   headerBar,
@@ -68,16 +70,16 @@ export default function PricingPage() {
   return (
     <main className={pageMain}>
       <div className={`${pageContainer} pb-20 pt-8 lg:pb-24 lg:pt-10`}>
-        <header className={`mb-10 flex flex-wrap items-center justify-between gap-4 ${headerBar}`}>
-          <Link href="/" className={brandMark}>
+        <header className={`mb-10 ${headerBar}`}>
+          <Link href="/" className={`${brandMark} shrink-0`}>
             <span className={brandDot} aria-hidden />
             JobFit AI
           </Link>
-          <nav className="flex flex-wrap items-center gap-2 text-sm font-medium">
-            <Link href="/" className={`${btnSecondary} min-h-0 px-4 py-2`}>
+          <nav className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end" aria-label="Primary">
+            <Link href="/" className={navBtn}>
               Home
             </Link>
-            <Link href="/analyze" className={`${btnPrimary} min-h-0 px-4 py-2`}>
+            <Link href="/analyze" className={navBtnPrimary}>
               Analyze CV
             </Link>
           </nav>
@@ -170,8 +172,6 @@ export default function PricingPage() {
         <p className={`mx-auto mt-8 max-w-xl text-center text-xs leading-relaxed ${textMuted}`}>
           Prices in EUR. Taxes may apply at checkout. Your plan controls which features unlock after payment.
         </p>
-
-        <TestimonialsSection idPrefix="pricing" compactTop className="mx-auto max-w-6xl pt-14" />
 
         <section className="mx-auto mt-16 max-w-2xl" aria-labelledby="faq-heading">
           <h2 id="faq-heading" className={`text-center ${sectionHeading} text-xl`}>

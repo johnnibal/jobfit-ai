@@ -12,7 +12,7 @@ import {
  SUCCESS_PRO_REPORT_UNLOCKED_BODY,
  SUCCESS_PRO_REPORT_UNLOCKED_TITLE,
 } from '@/lib/billing/checkoutSuccessCopy'
-import { btnPrimary } from '@/components/ui/theme'
+import { btnPrimary, btnSecondary } from '@/components/ui/theme'
 
 export default function CheckoutSuccessClient() {
  const searchParams = useSearchParams()
@@ -218,7 +218,7 @@ export default function CheckoutSuccessClient() {
  </button>
  <Link
  href="/analyze"
- className="mt-4 inline-flex w-full min-h-[44px] items-center justify-center rounded-lg border border-zinc-300 bg-white px-6 py-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
+ className={`${btnSecondary} mt-4 w-full px-6 py-3`}
  >
  Back to analyzer
  </Link>
