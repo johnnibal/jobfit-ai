@@ -120,7 +120,7 @@ Build command: npm run build
 Start command: npm run start
 ```
 
-The build runs `prisma migrate deploy` automatically when `DATABASE_URL` is available at build time.
+Migrations run at **container start** (`prisma migrate deploy` in the start script), not during build — Railway’s internal `DATABASE_URL` is only reachable at runtime.
 
 ### 5. Verify after deploy
 
