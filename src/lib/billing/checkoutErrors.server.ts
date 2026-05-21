@@ -20,12 +20,18 @@ export function checkoutErrorResponse(error: unknown) {
   }
 
   if (error instanceof Stripe.errors.StripeError) {
+    const detail =
+      error.code === 'resource_missing'
+        ? 'A price ID was not found in this Stripe account/mode. Copy Price ids (price_…) from the same Live/Test mode as your secret key.'
+        : error.message
+
     return {
       status: 502 as const,
       body: {
-        error: 'Stripe rejected the checkout request. Check live/test keys and price IDs match your Stripe account.',
+        error: detail,
         code: 'STRIPE_ERROR' as const,
         stripeType: error.type,
+        stripeCode: error.code ?? null,
       },
     }
   }
