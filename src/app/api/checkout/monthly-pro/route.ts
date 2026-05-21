@@ -9,16 +9,16 @@ import { prisma } from '@/lib/prisma'
 import { getPublicAppUrl } from '@/lib/appUrl'
 import { getStripe } from '@/lib/stripe'
 import { JOBFIT_MONTHLY_PRO_COOKIE, verifyMonthlyProEntitlementCookie } from '@/lib/billing/signedPremiumCookie'
-import { ERR_CHECKOUT_NOT_CONFIGURED, ERR_DATABASE_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { ERR_CHECKOUT_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { checkoutConfigIncompleteResponse } from '@/lib/billing/checkoutServerConfig.server'
+import { checkoutErrorResponse } from '@/lib/billing/checkoutErrors.server'
 import { logServerError } from '@/lib/logging/safeLog.server'
 
 export async function POST() {
   try {
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json(
-        { error: ERR_DATABASE_NOT_CONFIGURED, code: 'NO_DATABASE', fallbackDemo: true },
-        { status: 503 }
-      )
+    const configBlock = checkoutConfigIncompleteResponse('monthly_pro')
+    if (configBlock) {
+      return NextResponse.json(configBlock.body, { status: configBlock.status })
     }
 
     const stripe = getStripe()
@@ -88,6 +88,7 @@ export async function POST() {
     } else {
       logServerError('[checkout/monthly-pro]', e)
     }
-    return NextResponse.json({ error: 'Unable to start subscription checkout.' }, { status: 500 })
+    const mapped = checkoutErrorResponse(e)
+    return NextResponse.json(mapped.body, { status: mapped.status })
   }
 }

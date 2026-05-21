@@ -17,20 +17,16 @@ import {
   verifyAnonymousCookie,
 } from '@/lib/usage/anonymousCookie'
 import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
-import { checkoutUnavailableNoDatabaseMessage, ERR_CHECKOUT_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { ERR_CHECKOUT_NOT_CONFIGURED } from '@/lib/api/publicErrors'
+import { checkoutConfigIncompleteResponse } from '@/lib/billing/checkoutServerConfig.server'
+import { checkoutErrorResponse } from '@/lib/billing/checkoutErrors.server'
 import { logServerError } from '@/lib/logging/safeLog.server'
 
 export async function POST(req: Request) {
   try {
-    if (!process.env.DATABASE_URL) {
-      return NextResponse.json(
-        {
-          error: checkoutUnavailableNoDatabaseMessage(),
-          code: 'NO_DATABASE',
-          fallbackDemo: true,
-        },
-        { status: 503 }
-      )
+    const configBlock = checkoutConfigIncompleteResponse('pro_report')
+    if (configBlock) {
+      return NextResponse.json(configBlock.body, { status: configBlock.status })
     }
 
     const stripe = getStripe()
@@ -135,10 +131,8 @@ export async function POST(req: Request) {
         })
       } catch (bindErr) {
         logServerError('[checkout/pro-report] prebind pending credit failed', bindErr)
-        const res = NextResponse.json(
-          { error: 'Could not reserve prepaid credit. Try again shortly.' },
-          { status: 500 }
-        )
+        const mapped = checkoutErrorResponse(bindErr)
+        const res = NextResponse.json(mapped.body, { status: mapped.status })
         applyAnonymousSessionCookie(res, signAnonymousSessionId(anonymousSessionId))
         return res
       }
@@ -149,6 +143,7 @@ export async function POST(req: Request) {
     return res
   } catch (e) {
     logServerError('[checkout/pro-report]', e)
-    return NextResponse.json({ error: 'Unable to start checkout. Try again shortly.' }, { status: 500 })
+    const mapped = checkoutErrorResponse(e)
+    return NextResponse.json(mapped.body, { status: mapped.status })
   }
 }

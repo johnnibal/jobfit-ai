@@ -67,17 +67,18 @@ export function ProReportCheckoutButton({
       const data: { url?: unknown; error?: unknown; fallbackDemo?: unknown } = await res.json()
 
       if (!res.ok) {
+        const message = typeof data.error === 'string' ? data.error : 'Checkout failed.'
         if (res.status === 503 && data.fallbackDemo) {
           if (billingSandboxVisible) {
             scrollToSandbox()
             setErr('Local dev: use the Billing sandbox on /analyze (+1 Pro credit) instead of Stripe checkout.')
           } else {
-            setErr(
-              typeof data.error === 'string'
-                ? data.error
-                : 'Checkout is not configured. Add Stripe keys and price IDs to the deployment environment.'
-            )
+            setErr(message)
           }
+          return
+        }
+        if (res.status === 503 || res.status === 502) {
+          setErr(message)
           return
         }
         if (res.status === 409) {
@@ -159,20 +160,21 @@ export function MonthlyProCheckoutButton({
       const data: { url?: unknown; error?: unknown; fallbackDemo?: unknown } = await res.json()
 
       if (!res.ok) {
+        const message = typeof data.error === 'string' ? data.error : 'Checkout failed.'
         if (res.status === 503 && data.fallbackDemo) {
           if (billingSandboxVisible) {
             scrollToSandbox()
             setErr('Local dev: use the Billing sandbox on /analyze (+1 Pro credit) instead of Stripe checkout.')
           } else {
-            setErr(
-              typeof data.error === 'string'
-                ? data.error
-                : 'Checkout is temporarily unavailable.'
-            )
+            setErr(message)
           }
           return
         }
-        throw new Error(typeof data.error === 'string' ? data.error : 'Checkout failed.')
+        if (res.status === 503 || res.status === 502) {
+          setErr(message)
+          return
+        }
+        throw new Error(message)
       }
 
       if (typeof data.url === 'string' && data.url.startsWith('http')) {

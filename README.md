@@ -82,15 +82,34 @@ git push
 - Open the service connected to this GitHub repo
 - Trigger a redeploy, or push to the connected branch
 
-### 3. Set the required environment variable
+### 3. Set required environment variables
 
-In Railway, add:
+In Railway → your service → **Variables**, set everything from `.env.example`. Minimum for checkout:
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | Postgres connection (Railway Postgres plugin) |
+| `STRIPE_SECRET_KEY` | Stripe **live** secret key (`sk_live_…`) in production |
+| `STRIPE_PRO_REPORT_PRICE_ID` | One-time Pro Report price ID (`price_…`) |
+| `STRIPE_MONTHLY_PRO_PRICE_ID` | Recurring Monthly Pro price ID |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret (`whsec_…`) |
+| `NEXT_PUBLIC_APP_URL` | Your public site URL, e.g. `https://your-app.up.railway.app` |
+| `NEXT_PUBLIC_APP_ENV` | `production` |
+| `JOBFIT_USAGE_SECRET` | Random string, min 16 chars (cookie signing) |
+| `JOBFIT_ENTITLEMENT_SECRET` | Random string, min 16 chars (Pro unlock cookies) |
+| `OPENROUTER_API_KEY` | AI analysis |
+
+**Important:** Stripe keys and price IDs must all be from the **same mode** (all live or all test). A test key with live price IDs causes checkout to fail.
+
+After deploy, open `/api/health/checkout` — it lists any missing variables (names only, no secrets).
+
+Run migrations once if the build did not apply them:
 
 ```bash
-OPENROUTER_API_KEY=your_openrouter_api_key
+npx prisma migrate deploy
 ```
 
-Without this variable, the UI pages will load but `/api/analyze` will return a server error.
+Without `DATABASE_URL` / migrations, Pro Report checkout fails when reserving prepaid credit. Without Stripe vars or `JOBFIT_USAGE_SECRET`, both checkout buttons return errors.
 
 ### 4. Railway build/runtime settings
 
@@ -100,6 +119,8 @@ Railway should auto-detect this project as a Next.js app. If you need to set com
 Build command: npm run build
 Start command: npm run start
 ```
+
+The build runs `prisma migrate deploy` automatically when `DATABASE_URL` is available at build time.
 
 ### 5. Verify after deploy
 
