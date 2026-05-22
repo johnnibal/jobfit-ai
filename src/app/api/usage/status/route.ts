@@ -27,11 +27,38 @@ import {
   JOBFIT_MONTHLY_PRO_COOKIE,
   verifyMonthlyProEntitlementCookie,
 } from '@/lib/billing/signedPremiumCookie'
+import { logServerError } from '@/lib/logging/safeLog.server'
+
+function degradedUsageResponse(signedAnon: string | null) {
+  const limit = FREE_ANALYSES_PER_DAY
+  const used = 0
+  const snapshot: UsageQuotaSnapshot = {
+    usedInPeriod: used,
+    limit,
+    period: 'day',
+    monthlyProVerified: false,
+  }
+  const res = NextResponse.json({
+    monthlyProVerified: false,
+    quotaMode: 'daily',
+    used,
+    limit,
+    remaining: getRemainingAnalyses(snapshot),
+    canRun: usageLimitsDisabled() || canRunAnalysis(snapshot),
+    prepaidProReportCreditEligible: false,
+    degraded: true,
+    error: 'Usage quota could not be verified.',
+  })
+  applyAnonymousSessionCookie(res, signedAnon)
+  return res
+}
 
 export async function GET() {
+  let signedAnon: string | null = null
+
+  try {
   const jar = await cookies()
   const anonVerified = verifyAnonymousCookie(jar.get(JOBFIT_ANON_COOKIE)?.value)
-  let signedAnon: string | null = null
   const anonymousSessionId = anonVerified ?? mintAnonymousSessionId()
   if (!anonVerified) {
     signedAnon = signAnonymousSessionId(anonymousSessionId)
@@ -112,4 +139,8 @@ export async function GET() {
 
   applyAnonymousSessionCookie(res, signedAnon)
   return res
+  } catch (e) {
+    logServerError('[usage/status]', e)
+    return degradedUsageResponse(signedAnon)
+  }
 }

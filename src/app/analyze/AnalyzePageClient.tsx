@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnalysisInsightsPanel } from '@/components/analyze/AnalysisInsightsPanel'
 import { AnalysisResultEmailGate } from '@/components/analyze/AnalysisResultEmailGate'
@@ -18,7 +17,7 @@ import {
 } from '@/lib/jobfitStorage'
 import { AppNav } from '@/components/nav/AppNav'
 import { getAnalysisQuotaCap } from '@/lib/analysisPermissions'
-import { MONTHLY_PRO_ANALYSES_PER_MONTH } from '@/lib/planTypes'
+import { MONTHLY_PRO_ANALYSES_PER_MONTH, FREE_ANALYSES_PER_DAY } from '@/lib/planTypes'
 import { LABEL_BUY_PRO_REPORT, LABEL_SUBSCRIBE_MONTHLY_PRO } from '@/lib/planTypes'
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { localBillingSandboxActive } from '@/lib/billing/localBillingSandbox'
@@ -28,7 +27,6 @@ import { parseAnalyzeSuccessBody } from '@/lib/analyze/buildAnalysisPreview'
 import type { LockedPreviewMetadata } from '@/lib/analyze/analysisResponseTypes'
 import { extractTextFromPdfFile } from '@/lib/pdf/extractPdfText'
 import {
-  alertError,
   alertInfo,
   alertWarning,
   analyzerFormCard,
@@ -66,25 +64,79 @@ type GatedAnalysisPayload = {
   lockedPreview: LockedPreviewMetadata | null
 }
 
-type UsageUiState =
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | {
-      status: 'ready'
-      monthlyProVerified: boolean
-      quotaMode: 'daily' | 'monthly'
-      used: number
-      limit: number
-      remaining: number
-      canRun: boolean
-    }
+const BOOTSTRAP_FETCH_TIMEOUT_MS = 12_000
+const BOOTSTRAP_LOADING_MAX_MS = 15_000
 
-export default function AnalyzePageClient() {
-  const searchParams = useSearchParams()
+type UsageUiReady = {
+  status: 'ready'
+  monthlyProVerified: boolean
+  quotaMode: 'daily' | 'monthly'
+  used: number
+  limit: number
+  remaining: number
+  canRun: boolean
+  degraded?: boolean
+}
+
+type UsageUiState = { status: 'loading' } | UsageUiReady
+
+const FALLBACK_USAGE_READY: UsageUiReady = {
+  status: 'ready',
+  monthlyProVerified: false,
+  quotaMode: 'daily',
+  used: 0,
+  limit: FREE_ANALYSES_PER_DAY,
+  remaining: FREE_ANALYSES_PER_DAY,
+  canRun: true,
+  degraded: true,
+}
+
+async function fetchJsonWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<{ res: Response; data: Record<string, unknown> }> {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(url, { ...init, signal: controller.signal })
+    const data = (await res.json()) as Record<string, unknown>
+    return { res, data }
+  } finally {
+    window.clearTimeout(timer)
+  }
+}
+
+function parseUsageUi(data: Record<string, unknown>): UsageUiReady {
+  const quotaMode =
+    typeof data.quotaMode === 'string' && data.quotaMode === 'monthly' ? 'monthly' : 'daily'
+
+  return {
+    status: 'ready',
+    monthlyProVerified: Boolean(data.monthlyProVerified),
+    quotaMode,
+    used: typeof data.used === 'number' ? data.used : 0,
+    limit: typeof data.limit === 'number' ? data.limit : FREE_ANALYSES_PER_DAY,
+    remaining: typeof data.remaining === 'number' ? data.remaining : 0,
+    canRun: Boolean(data.canRun),
+    degraded: Boolean(data.degraded),
+  }
+}
+
+type AnalyzePageClientProps = {
+  initialReportId?: string
+  initialSavedRedirect?: boolean
+}
+
+export default function AnalyzePageClient({
+  initialReportId,
+  initialSavedRedirect = false,
+}: AnalyzePageClientProps) {
   const autosaveIssuedRef = useRef<Set<string>>(new Set())
   const freeResultViewTrackedRef = useRef<string | null>(null)
   const shouldScrollToResultsRef = useRef(false)
   const gatedAnalysisRef = useRef<GatedAnalysisPayload | null>(null)
+  const usageUiRef = useRef<UsageUiState>({ status: 'loading' })
 
   const [cv, setCv] = useState('')
   const [jd, setJd] = useState('')
@@ -97,6 +149,7 @@ export default function AnalyzePageClient() {
   const [growthEmailNotice, setGrowthEmailNotice] = useState<string | null>(null)
   const [entitlements, setEntitlements] = useState<JobFitStoredEntitlements>(() => defaultEntitlements())
   const [usageUi, setUsageUi] = useState<UsageUiState>({ status: 'loading' })
+  const [bootstrapWarning, setBootstrapWarning] = useState<string | null>(null)
   const [upgradeModal, setUpgradeModal] = useState<{
     open: boolean
     variant: ConversionUpgradeVariant
@@ -110,42 +163,45 @@ export default function AnalyzePageClient() {
   const [cvUploadBusy, setCvUploadBusy] = useState(false)
   const [cvUploadError, setCvUploadError] = useState<string | null>(null)
 
+  const applyUsageFallback = useCallback((message: string) => {
+    setUsageUi(FALLBACK_USAGE_READY)
+    setBootstrapWarning(message)
+  }, [])
+
   const refreshUsage = useCallback(() => {
     setUsageUi({ status: 'loading' })
 
-    fetch('/api/usage/status', { credentials: 'include' })
-      .then(async (res) => {
-        const data: Record<string, unknown> = await res.json()
+    fetchJsonWithTimeout('/api/usage/status', { credentials: 'include' }, BOOTSTRAP_FETCH_TIMEOUT_MS)
+      .then(({ res, data }) => {
         if (!res.ok) {
           throw new Error(typeof data.error === 'string' ? data.error : 'Could not load usage quota.')
         }
 
-        const quotaMode =
-          typeof data.quotaMode === 'string' && data.quotaMode === 'monthly' ? 'monthly' : 'daily'
-
-        setUsageUi({
-          status: 'ready',
-          monthlyProVerified: Boolean(data.monthlyProVerified),
-          quotaMode,
-          used: typeof data.used === 'number' ? data.used : 0,
-          limit: typeof data.limit === 'number' ? data.limit : 1,
-          remaining: typeof data.remaining === 'number' ? data.remaining : 0,
-          canRun: Boolean(data.canRun),
-        })
+        const next = parseUsageUi(data)
+        setUsageUi(next)
+        if (next.degraded) {
+          setBootstrapWarning(
+            typeof data.error === 'string'
+              ? data.error
+              : 'Usage quota could not be verified. You can still try an analysis.'
+          )
+        }
       })
-      .catch((e: unknown) =>
-        setUsageUi({
-          status: 'error',
-          message: e instanceof Error ? e.message : 'Could not load usage quota.',
-        })
-      )
-  }, [])
+      .catch((e: unknown) => {
+        const message =
+          e instanceof DOMException && e.name === 'AbortError'
+            ? 'Usage quota timed out. You can still try an analysis.'
+            : e instanceof Error
+              ? e.message
+              : 'Could not load usage quota.'
+        applyUsageFallback(`${message} You can still try an analysis.`)
+      })
+  }, [applyUsageFallback])
 
   const fetchBillingSession = useCallback(() => {
     setBilling((b) => ({ ...b, loading: true, error: null }))
-    fetch('/api/billing/session', { credentials: 'include' })
-      .then(async (res) => {
-        const data: Record<string, unknown> = await res.json()
+    fetchJsonWithTimeout('/api/billing/session', { credentials: 'include' }, BOOTSTRAP_FETCH_TIMEOUT_MS)
+      .then(({ res, data }) => {
         if (!res.ok) {
           throw new Error(typeof data.error === 'string' ? data.error : 'Could not load billing session.')
         }
@@ -165,13 +221,20 @@ export default function AnalyzePageClient() {
         setProReportGrantedAnalysisIds(Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string') : [])
       })
       .catch((e: unknown) => {
+        const message =
+          e instanceof DOMException && e.name === 'AbortError'
+            ? 'Billing status timed out.'
+            : e instanceof Error
+              ? e.message
+              : 'Billing session failed.'
         setBilling({
           ...emptyBilling,
           loading: false,
           fetched: true,
-          error: e instanceof Error ? e.message : 'Billing session failed.',
+          error: message,
         })
         setProReportGrantedAnalysisIds([])
+        setBootstrapWarning((prev) => prev ?? `${message} Subscription features may be limited until this recovers.`)
       })
       .finally(() => {
         refreshUsage()
@@ -184,18 +247,31 @@ export default function AnalyzePageClient() {
   }, [])
 
   useEffect(() => {
-    if (searchParams.get('saved') !== '1') return
+    if (!initialSavedRedirect) return
     openUpgradeModal('conversion')
     window.history.replaceState({}, '', '/analyze')
-  }, [searchParams, openUpgradeModal])
+  }, [initialSavedRedirect, openUpgradeModal])
 
   useEffect(() => {
     setEntitlements(readEntitlements())
   }, [])
 
   useEffect(() => {
+    usageUiRef.current = usageUi
+  }, [usageUi])
+
+  useEffect(() => {
     fetchBillingSession()
   }, [fetchBillingSession])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (usageUiRef.current.status !== 'loading') return
+      applyUsageFallback('Usage quota took too long to load. You can still try an analysis.')
+    }, BOOTSTRAP_LOADING_MAX_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [applyUsageFallback])
 
   useEffect(() => {
     gatedAnalysisRef.current = gatedAnalysis
@@ -333,7 +409,7 @@ export default function AnalyzePageClient() {
   const reportsDashboardAllowed = monthlyProActive || reportsAccessMode === 'pro_only'
 
   useEffect(() => {
-    const reportId = searchParams.get('report')
+    const reportId = initialReportId
     if (!reportId || !isAnalysisSessionId(reportId)) return
 
     let cancelled = false
@@ -359,7 +435,7 @@ export default function AnalyzePageClient() {
     return () => {
       cancelled = true
     }
-  }, [searchParams])
+  }, [initialReportId])
 
   useEffect(() => {
     if (!result || !analysisId) return
@@ -400,17 +476,7 @@ export default function AnalyzePageClient() {
           demoMonthly || usageUi.quotaMode === 'monthly' ? ('month' as const) : ('day' as const),
         quotaRemaining: demoMonthly ? MONTHLY_PRO_ANALYSES_PER_MONTH : usageUi.remaining,
         quotaLoading: false,
-        quotaError: null as string | null,
-      }
-    }
-    if (usageUi.status === 'loading') {
-      return {
-        quotaUsed: 0,
-        quotaCap: fallbackCap,
-        quotaPeriod: fallbackPeriod,
-        quotaRemaining: 0,
-        quotaLoading: true,
-        quotaError: null as string | null,
+        quotaError: usageUi.degraded ? bootstrapWarning : null,
       }
     }
     return {
@@ -418,10 +484,10 @@ export default function AnalyzePageClient() {
       quotaCap: fallbackCap,
       quotaPeriod: fallbackPeriod,
       quotaRemaining: 0,
-      quotaLoading: false,
-      quotaError: usageUi.message,
+      quotaLoading: true,
+      quotaError: null as string | null,
     }
-  }, [monthlyProActive, usageUi])
+  }, [monthlyProActive, usageUi, bootstrapWarning])
 
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -445,11 +511,6 @@ export default function AnalyzePageClient() {
 
     if (usageUi.status === 'loading') {
       setResult('Usage quota is still loading. Please wait a moment.')
-      return
-    }
-
-    if (usageUi.status === 'error') {
-      setResult(usageUi.message)
       return
     }
 
@@ -675,7 +736,7 @@ export default function AnalyzePageClient() {
     }
   }
 
-  const submitDisabled = loading || usageUi.status === 'loading' || usageUi.status === 'error'
+  const submitDisabled = loading || usageUi.status === 'loading'
 
   const hasStripeBillingHistory = billing.fetched && billing.subscriptionStatus !== 'none'
 
@@ -752,16 +813,14 @@ export default function AnalyzePageClient() {
                 <p className={analyzerFormSubheading}>Required for each analysis run.</p>
               </div>
 
+              {bootstrapWarning ? <div className={alertWarning}>{bootstrapWarning}</div> : null}
+
               {usageUi.status === 'ready' && !usageUi.canRun ? (
                 <div className={alertWarning}>
                   You have no analyses left this period until quota resets. Use{' '}
                   <span className="font-semibold">{LABEL_BUY_PRO_REPORT}</span> for one paid run + full report, or{' '}
                   <span className="font-semibold">{LABEL_SUBSCRIBE_MONTHLY_PRO}</span> if you apply often.
                 </div>
-              ) : null}
-
-              {usageUi.status === 'error' ? (
-                <div className={alertError}>{usageUi.message}</div>
               ) : null}
 
               <div>
@@ -820,11 +879,9 @@ export default function AnalyzePageClient() {
                   ? 'Analyzing…'
                   : usageUi.status === 'loading'
                     ? 'Loading quota…'
-                    : usageUi.status === 'error'
-                      ? 'Quota unavailable'
-                      : !usageUi.canRun
-                        ? 'Quota reached'
-                        : 'Run analysis'}
+                    : !usageUi.canRun
+                      ? 'Quota reached'
+                      : 'Run analysis'}
               </button>
             </div>
           </form>
