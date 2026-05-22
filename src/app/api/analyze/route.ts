@@ -3,7 +3,6 @@ export const runtime = 'nodejs'
 import { randomUUID } from 'crypto'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { getAuthenticatedJobFitUserId } from '@/lib/auth/authenticatedUser'
 import {
   attachProReportEntitlementTokenCookie,
@@ -37,6 +36,12 @@ import {
 } from '@/lib/usage/anonymousCookie'
 import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
 import { getOpenRouterApiKey } from '@/lib/openrouter/getOpenRouterApiKey'
+import { createOpenRouterClient } from '@/lib/openrouter/createOpenRouterClient.server'
+import {
+  openRouterErrorHttpStatus,
+  openRouterLogContext,
+  openRouterUserErrorMessage,
+} from '@/lib/openrouter/openRouterErrors.server'
 import { ERR_AI_NOT_CONFIGURED } from '@/lib/api/publicErrors'
 import { logServerError, logServerWarn } from '@/lib/logging/safeLog.server'
 import {
@@ -242,10 +247,7 @@ export async function POST(req: Request) {
   const prompt = buildAnalysisPrompt(normalizedCv, normalizedJd)
 
   try {
-    const openai = new OpenAI({
-      apiKey,
-      baseURL: 'https://openrouter.ai/api/v1',
-    })
+    const openai = createOpenRouterClient(apiKey)
 
     const completion = await openai.chat.completions.create({
       model: 'anthropic/claude-3-haiku',
@@ -330,8 +332,11 @@ export async function POST(req: Request) {
       await decrementAnalysisUsage(subject, mode).catch(() => {})
     }
 
-    logServerError('[analyze] ai_provider', error)
+    logServerError('[analyze] ai_provider', error, openRouterLogContext(error))
 
-    return respond({ error: 'AI analysis failed. Please try again shortly.', analysisId }, 500)
+    return respond(
+      { error: openRouterUserErrorMessage(error), analysisId },
+      openRouterErrorHttpStatus(error)
+    )
   }
 }
