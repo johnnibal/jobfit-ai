@@ -21,7 +21,10 @@ export function createOpenRouterClient(apiKey?: string): OpenAI {
   return new OpenAI({
     apiKey: key,
     baseURL: OPENROUTER_BASE_URL,
-    defaultHeaders: openRouterAttributionHeaders(),
+    defaultHeaders: {
+      Authorization: `Bearer ${key}`,
+      ...openRouterAttributionHeaders(),
+    },
     timeout: 90_000,
     maxRetries: 1,
   })

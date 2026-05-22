@@ -36,7 +36,7 @@ import {
 } from '@/lib/usage/anonymousCookie'
 import { applyAnonymousSessionCookie } from '@/lib/usage/applyAnonymousSessionCookie'
 import { getOpenRouterApiKey } from '@/lib/openrouter/getOpenRouterApiKey'
-import { createOpenRouterClient } from '@/lib/openrouter/createOpenRouterClient.server'
+import { openRouterChatCompletion } from '@/lib/openrouter/openRouterChat.server'
 import {
   openRouterErrorHttpStatus,
   openRouterLogContext,
@@ -247,9 +247,8 @@ export async function POST(req: Request) {
   const prompt = buildAnalysisPrompt(normalizedCv, normalizedJd)
 
   try {
-    const openai = createOpenRouterClient(apiKey)
-
-    const completion = await openai.chat.completions.create({
+    const message = await openRouterChatCompletion({
+      apiKey,
       model: 'anthropic/claude-3-haiku',
       messages: [
         {
@@ -261,9 +260,6 @@ export async function POST(req: Request) {
       ],
       temperature: 0.2,
     })
-
-    const rawMessage = completion.choices[0]?.message?.content
-    const message = typeof rawMessage === 'string' ? rawMessage.trim() : ''
 
     const fullReportAccess = mode === 'monthly' || prepaidCreditRowId != null
     const accessTier = mode === 'monthly' ? 'monthly_pro' : prepaidCreditRowId != null ? 'pro_report' : 'free'
@@ -332,7 +328,7 @@ export async function POST(req: Request) {
       await decrementAnalysisUsage(subject, mode).catch(() => {})
     }
 
-    logServerError('[analyze] ai_provider', error, openRouterLogContext(error))
+    logServerError('[analyze] ai_provider', error, openRouterLogContext(error, apiKey))
 
     return respond(
       { error: openRouterUserErrorMessage(error), analysisId },
