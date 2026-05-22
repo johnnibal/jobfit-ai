@@ -96,7 +96,8 @@ body {
   .hero-logo-stage,
   .hero-logo-wave-layer,
   .hero-logo-ai-layer,
-  .hero-connector-segment {
+  .hero-connector-segment,
+  .hero-connector-segment-vertical {
     animation: none;
   }
 }
@@ -107,6 +108,15 @@ body {
   }
   to {
     background-position: 10px 0;
+  }
+}
+
+@keyframes hero-connector-march-vertical {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 10px;
   }
 }
 
@@ -121,6 +131,19 @@ body {
   );
   background-size: 10px 1px;
   animation: hero-connector-march 1.4s linear infinite;
+}
+
+.hero-connector-segment-vertical {
+  width: 1px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    #a1a1aa 0,
+    #a1a1aa 5px,
+    transparent 5px,
+    transparent 10px
+  );
+  background-size: 1px 10px;
+  animation: hero-connector-march-vertical 1.4s linear infinite;
 }
 
 /** CV→JD dash: masked over the lens + its border (offset to match logo object-position). */
@@ -155,3 +178,23 @@ body {
     --hero-lens-mask-right: 46px;
   }
 }
+
+/** Mobile: one continuous vertical bridge (same z-index + dash as desktop). */
+.hero-connector-bridge-vertical {
+  z-index: 15;
+  opacity: 0;
+}
+
+.hero-connector-bridge-vertical--ready {
+  opacity: 1;
+}
+
+/** Lens ring metrics for mobile bridge mask measurement. */
+.hero-lens-vertical-bridge {
+  --hero-logo-opt-y: 37%;
+  --hero-lens-outer-ring-radius: 52px;
+  /* CV-side gap: extend toward ring, then stop just before the outline */
+  --hero-lens-gap-extend-top: 10px;
+  --hero-lens-gap-stop-before-top: 3px;
+}
+

@@ -93,38 +93,36 @@ export function ProReportPromoBox({ disabled, compact, onApplied }: Props) {
 
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3'}>
-      <div className="flex flex-wrap items-end gap-2">
-        <label className={`flex-1 ${compact ? 'min-w-[120px]' : 'min-w-[160px]'}`}>
-          <span
-            className={`mb-1 block ${compact ? 'text-[10px]' : 'text-[11px]'} ${labelCaps}`}
-          >
-            Promo / referral code
-          </span>
-          <input
-            type="text"
-            disabled={disabled || busy}
-            value={input}
-            onChange={(e) => {
-              const v = e.target.value
-              setMsg(null)
-              setInput(v)
-              if (!v.trim()) {
-                setAppliedTag(null)
-                onApplied(null)
-              }
-            }}
-            placeholder="LAUNCH50"
-            className={inputSurface}
-            autoCapitalize="characters"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-        </label>
+      <label className="block">
+        <span className={`mb-1.5 block ${compact ? 'text-[10px]' : 'text-[11px]'} ${labelCaps}`}>
+          Promo / referral code
+        </span>
+        <input
+          type="text"
+          disabled={disabled || busy}
+          value={input}
+          onChange={(e) => {
+            const v = e.target.value
+            setMsg(null)
+            setInput(v)
+            if (!v.trim()) {
+              setAppliedTag(null)
+              onApplied(null)
+            }
+          }}
+          placeholder="LAUNCH50"
+          className={inputSurface}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+      </label>
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           disabled={disabled || busy}
           onClick={() => void apply()}
-          className={`${btnSecondary} px-4 py-2 text-xs`}
+          className={`${btnSecondary} ${compact ? 'min-h-10 flex-1 px-4 py-2 text-xs sm:flex-none' : 'px-4 py-2 text-xs'}`}
         >
           {busy ? 'Checking…' : 'Apply'}
         </button>
@@ -133,7 +131,7 @@ export function ProReportPromoBox({ disabled, compact, onApplied }: Props) {
             type="button"
             disabled={disabled || busy}
             onClick={clearAll}
-            className={`${btnSecondary} px-3 py-2 text-xs`}
+            className={`${btnSecondary} min-h-10 px-3 py-2 text-xs`}
           >
             Clear
           </button>

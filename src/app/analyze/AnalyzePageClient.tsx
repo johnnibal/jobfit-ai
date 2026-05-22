@@ -2,9 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AnalysisInsightsPanel } from '@/components/analyze/AnalysisInsightsPanel'
-import { AnalysisResultEmailGate } from '@/components/analyze/AnalysisResultEmailGate'
-import type { SubscriptionBillingUi } from '@/components/analyze/AnalysisInsightsPanel'
+import { AnalysisInsightsPanel, type SubscriptionBillingUi } from '@/components/analyze/AnalysisInsightsPanel'
 import { ConversionUpgradeModal, type ConversionUpgradeVariant } from '@/components/analyze/ConversionUpgradeModal'
 import {
   consumeProReportCreditForAnalysis,
@@ -22,12 +20,10 @@ import { LABEL_BUY_PRO_REPORT, LABEL_SUBSCRIBE_MONTHLY_PRO } from '@/lib/planTyp
 import { isAnalysisSessionId } from '@/lib/billing/analysisSession'
 import { localBillingSandboxActive } from '@/lib/billing/localBillingSandbox'
 import { trackEvent } from '@/lib/analytics/track'
-import { isFitAnalysisOutput } from '@/lib/parseAnalysis'
 import { parseAnalyzeSuccessBody } from '@/lib/analyze/buildAnalysisPreview'
 import type { LockedPreviewMetadata } from '@/lib/analyze/analysisResponseTypes'
 import { extractTextFromPdfFile } from '@/lib/pdf/extractPdfText'
 import {
-  alertInfo,
   alertWarning,
   analyzerFormCard,
   analyzerFormHeading,
@@ -56,12 +52,6 @@ const emptyBilling: SubscriptionBillingUi = {
   cancelAtPeriodEnd: false,
   lastPaymentFailedAt: null,
   error: null,
-}
-
-type GatedAnalysisPayload = {
-  analysisId: string
-  resultText: string
-  lockedPreview: LockedPreviewMetadata | null
 }
 
 const BOOTSTRAP_FETCH_TIMEOUT_MS = 12_000
@@ -135,7 +125,6 @@ export default function AnalyzePageClient({
   const autosaveIssuedRef = useRef<Set<string>>(new Set())
   const freeResultViewTrackedRef = useRef<string | null>(null)
   const shouldScrollToResultsRef = useRef(false)
-  const gatedAnalysisRef = useRef<GatedAnalysisPayload | null>(null)
   const usageUiRef = useRef<UsageUiState>({ status: 'loading' })
 
   const [cv, setCv] = useState('')
@@ -145,8 +134,6 @@ export default function AnalyzePageClient({
   const [analysisId, setAnalysisId] = useState<string | null>(null)
   const [serverLockedPreview, setServerLockedPreview] = useState<LockedPreviewMetadata | null>(null)
   const [resultIsPreview, setResultIsPreview] = useState(false)
-  const [gatedAnalysis, setGatedAnalysis] = useState<GatedAnalysisPayload | null>(null)
-  const [growthEmailNotice, setGrowthEmailNotice] = useState<string | null>(null)
   const [entitlements, setEntitlements] = useState<JobFitStoredEntitlements>(() => defaultEntitlements())
   const [usageUi, setUsageUi] = useState<UsageUiState>({ status: 'loading' })
   const [bootstrapWarning, setBootstrapWarning] = useState<string | null>(null)
@@ -274,19 +261,14 @@ export default function AnalyzePageClient({
   }, [applyUsageFallback])
 
   useEffect(() => {
-    gatedAnalysisRef.current = gatedAnalysis
-  }, [gatedAnalysis])
-
-  useEffect(() => {
     if (!shouldScrollToResultsRef.current || loading) return
-    if (!result && !gatedAnalysis) return
+    if (!result) return
     requestAnimationFrame(() => {
       if (!shouldScrollToResultsRef.current) return
       shouldScrollToResultsRef.current = false
-      const targetId = gatedAnalysis ? 'jobfit-email-gate' : 'jobfit-analysis-results'
-      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      document.getElementById('jobfit-analysis-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
-  }, [loading, result, gatedAnalysis])
+  }, [loading, result])
 
   /** Stripe Checkout returns here after Pro Report payment — persist signed HttpOnly grants cookie via server. */
   useEffect(() => {
@@ -378,30 +360,14 @@ export default function AnalyzePageClient({
   ])
 
   const maybeTrackFreeResultView = useCallback(
-    (id: string, hadEmailGate: boolean) => {
+    (id: string) => {
       if (monthlyProActive) return
       if (mergedFullyUnlockedAnalysisIds.includes(id)) return
       if (freeResultViewTrackedRef.current === id) return
       freeResultViewTrackedRef.current = id
-      trackEvent('free_result_viewed', { had_email_gate: hadEmailGate })
+      trackEvent('free_result_viewed', { had_email_gate: false })
     },
     [monthlyProActive, mergedFullyUnlockedAnalysisIds]
-  )
-
-  const releaseGatedAnalysis = useCallback(
-    (opts: { emailSaveNotice: string | null }) => {
-      const g = gatedAnalysisRef.current
-      if (!g) return
-      setGrowthEmailNotice(opts.emailSaveNotice)
-      setResult(g.resultText)
-      setAnalysisId(g.analysisId)
-      setServerLockedPreview(g.lockedPreview)
-      setGatedAnalysis(null)
-      setResultIsPreview(true)
-      shouldScrollToResultsRef.current = true
-      maybeTrackFreeResultView(g.analysisId, true)
-    },
-    [maybeTrackFreeResultView]
   )
 
   const savedReportsNavLocked = !monthlyProActive && reportsAccessMode === 'none'
@@ -425,8 +391,6 @@ export default function AnalyzePageClient({
         setAnalysisId(data.report.analysisId)
         setServerLockedPreview(null)
         setResultIsPreview(false)
-        setGatedAnalysis(null)
-        setGrowthEmailNotice(null)
         autosaveIssuedRef.current.add(data.report.analysisId)
         window.history.replaceState({}, '', '/analyze')
       })
@@ -524,8 +488,7 @@ export default function AnalyzePageClient({
     setAnalysisId(null)
     setServerLockedPreview(null)
     setResultIsPreview(false)
-    setGatedAnalysis(null)
-    setGrowthEmailNotice(null)
+    shouldScrollToResultsRef.current = true
 
     try {
       trackEvent('analysis_started')
@@ -591,23 +554,10 @@ export default function AnalyzePageClient({
 
       setServerLockedPreview(lockedPreview)
       setResultIsPreview(!serverFullAccess)
-
-      /** Growth email gate is for free previews only — paid tiers and local dev skip it */
-      const skipGrowthEmailGate =
-        process.env.NODE_ENV === 'development' ||
-        monthlyProActive ||
-        (usageUi.status === 'ready' && usageUi.monthlyProVerified) ||
-        serverFullAccess
-
-      if (isFitAnalysisOutput(msg) && !skipGrowthEmailGate) {
-        setGatedAnalysis({ analysisId: id, resultText: msg, lockedPreview })
-      } else {
-        setGatedAnalysis(null)
-        setAnalysisId(id)
-        setResult(msg)
-        if (!skipGrowthEmailGate) {
-          maybeTrackFreeResultView(id, false)
-        }
+      setAnalysisId(id)
+      setResult(msg)
+      if (!serverFullAccess && !monthlyProActive) {
+        maybeTrackFreeResultView(id)
       }
 
       void fetchBillingSession()
@@ -740,17 +690,14 @@ export default function AnalyzePageClient({
 
   const hasStripeBillingHistory = billing.fetched && billing.subscriptionStatus !== 'none'
 
-  const showApplicationInputs = !result && !gatedAnalysis
-  const showEmailGate = Boolean(gatedAnalysis) && !result
-  const inputsColumnVisible = showApplicationInputs || showEmailGate
+  const showApplicationInputs = !result
+  const inputsColumnVisible = showApplicationInputs
 
   const handleNewAnalysis = () => {
     setResult(null)
     setAnalysisId(null)
     setServerLockedPreview(null)
     setResultIsPreview(false)
-    setGatedAnalysis(null)
-    setGrowthEmailNotice(null)
     requestAnimationFrame(() => {
       document.getElementById('jobfit-application-inputs')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
@@ -885,22 +832,6 @@ export default function AnalyzePageClient({
               </button>
             </div>
           </form>
-          ) : null}
-
-          {showEmailGate && gatedAnalysis ? (
-            <div
-              id="jobfit-email-gate"
-              className={`${analyzerFormCard} ${cardPadding} order-1 scroll-mt-24 lg:col-start-1 lg:row-start-1 lg:self-start`}
-            >
-              <AnalysisResultEmailGate
-                analysisId={gatedAnalysis.analysisId}
-                onRelease={releaseGatedAnalysis}
-              />
-            </div>
-          ) : null}
-
-          {growthEmailNotice && !(result || gatedAnalysis) ? (
-            <div className={`order-3 lg:col-span-2 ${alertInfo}`}>{growthEmailNotice}</div>
           ) : null}
 
           <AnalysisInsightsPanel
