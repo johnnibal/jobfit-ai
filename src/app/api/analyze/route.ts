@@ -44,6 +44,7 @@ import {
   buildPreviewAnalyzeResponse,
 } from '@/lib/analyze/buildAnalysisPreview'
 import { persistAnalysisSnapshot } from '@/lib/analyze/analysisSnapshot.server'
+import { analyzeConfigIncompleteResponse } from '@/lib/analyze/analyzeServerConfig.server'
 
 function buildAnalysisPrompt(cv: string, jd: string) {
   return `
@@ -113,12 +114,25 @@ ${jd}
 }
 
 export async function POST(req: Request) {
-  const jar = await cookies()
-  const anonVerified = verifyAnonymousCookie(jar.get(JOBFIT_ANON_COOKIE)?.value)
+  const configBlock = analyzeConfigIncompleteResponse()
+  if (configBlock) {
+    return NextResponse.json(configBlock.body, { status: configBlock.status })
+  }
+
   let signedAnon: string | null = null
-  const anonymousSessionId = anonVerified ?? mintAnonymousSessionId()
-  if (!anonVerified) {
-    signedAnon = signAnonymousSessionId(anonymousSessionId)
+  let anonymousSessionId: string
+  let jar: Awaited<ReturnType<typeof cookies>>
+
+  try {
+    jar = await cookies()
+    const anonVerified = verifyAnonymousCookie(jar.get(JOBFIT_ANON_COOKIE)?.value)
+    anonymousSessionId = anonVerified ?? mintAnonymousSessionId()
+    if (!anonVerified) {
+      signedAnon = signAnonymousSessionId(anonymousSessionId)
+    }
+  } catch (e) {
+    logServerError('[analyze] session bootstrap', e)
+    return NextResponse.json({ error: 'Could not initialize analysis session.' }, { status: 503 })
   }
 
   const respond = (payload: unknown, status: number) => {
@@ -156,7 +170,7 @@ export async function POST(req: Request) {
   }
 
   if (!apiKey) {
-    return respond({ error: ERR_AI_NOT_CONFIGURED }, 500)
+    return respond({ error: ERR_AI_NOT_CONFIGURED, code: 'CONFIG_INCOMPLETE' }, 503)
   }
 
   const authenticatedUserId = await getAuthenticatedJobFitUserId()
